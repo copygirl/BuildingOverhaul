@@ -1,0 +1,14 @@
+{
+	"type": "code",
+	"name": "BuildingOverhaul",
+	"modid": "buildingoverhaul",
+	"version": "0.0.0",
+
+	"description": "",
+	"website": "",
+	"authors": [ "copygirl" ],
+
+	"dependencies": {
+		"game": "1.14.5"
+	}
+}

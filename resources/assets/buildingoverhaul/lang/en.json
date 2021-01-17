@@ -1,0 +1,5 @@
+{
+  "placefailure-buildingoverhaul-nohammer": "Cannot build without a hammer",
+  "placefailure-buildingoverhaul-norecipe": "Cannot build without a valid recipe",
+  "placefailure-buildingoverhaul-nomaterials": "Cannot build {0} without the required materials"
+}
