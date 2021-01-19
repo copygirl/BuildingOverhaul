@@ -1,0 +1,28 @@
+[{
+  "shape": "block",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:stone-*", "name": "rock" },
+  "ingredients": [
+    { "code": "game:stone-{rock}", "quantity": 4 },
+    { "code": "game:clay-blue" }
+  ],
+  "output": "game:cobblestone-{rock}"
+},{
+  "shape": "stair",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:stone-*", "name": "rock" },
+  "ingredients": [
+    { "code": "game:stone-{rock}", "quantity": 3 },
+    { "code": "game:clay-blue" }
+  ],
+  "output": "game:cobblestonestairs-{rock}-up-north-free"
+},{
+  "shape": "slab",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:stone-*", "name": "rock" },
+  "ingredients": [
+    { "code": "game:stone-{rock}", "quantity": 2 },
+    { "code": "game:clay-blue" }
+  ],
+  "output": "game:cobblestoneslab-{rock}-up-north-free"
+}]

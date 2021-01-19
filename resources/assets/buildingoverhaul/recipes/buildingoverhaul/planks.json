@@ -1,0 +1,19 @@
+[{
+  "shape": "block",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [{ "code": "game:plank-{wood}", "quantity": 4 }],
+  "output": "game:planks-{wood}"
+},{
+  "shape": "stair",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [{ "code": "game:plank-{wood}", "quantity": 3 }],
+  "output": "game:plankstairs-{wood}-up-north-free"
+},{
+  "shape": "slab",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [{ "code": "game:plank-{wood}", "quantity": 2 }],
+  "output": "game:plankslab-{wood}-down-free"
+}]
