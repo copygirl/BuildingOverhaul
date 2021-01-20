@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using Vintagestory.API.Common;
@@ -7,7 +6,7 @@ using Vintagestory.API.Util;
 
 namespace BuildingOverhaul
 {
-	public class BuildingRecipe : IByteSerializable
+	public class Recipe
 	{
 		[JsonIgnore]
 		public AssetLocation Location { get; set; }
@@ -21,55 +20,6 @@ namespace BuildingOverhaul
 		public bool Enabled { get; set; } = true;
 		public int ToolDurabilityCost { get; set; } = 1;
 		// public AssetLocation ReplaceBlock { get; } = null;
-
-
-		public void FromBytes(BinaryReader reader, IWorldAccessor resolver)
-		{
-			Location = new AssetLocation(reader.ReadString());
-			Shape    = reader.ReadString();
-			Tool     = ReadIngredient(reader);
-			Material = ReadIngredient(reader);
-			Ingredients = new Ingredient[reader.ReadByte()];
-			for (var i = 0; i < Ingredients.Length; i++)
-				Ingredients[i] = ReadIngredient(reader);
-			Output  = new AssetLocation(reader.ReadString());
-			Enabled = true; // Client should only receive enabled recipes.
-			ToolDurabilityCost = reader.ReadInt32();
-		}
-
-		public void ToBytes(BinaryWriter writer)
-		{
-			writer.Write(Location.ToString());
-			writer.Write(Shape);
-			WriteIngredient(writer, Tool);
-			WriteIngredient(writer, Material);
-			writer.Write((byte)Ingredients.Length);
-			foreach (var ingredient in Ingredients)
-				WriteIngredient(writer, ingredient);
-			writer.Write(Output.ToString());
-			// Enabled is assumed to be true, client should only receive enabled recipes.
-			writer.Write(ToolDurabilityCost);
-		}
-
-		private static Ingredient ReadIngredient(BinaryReader reader)
-			=> new Ingredient {
-				Type = (EnumItemClass)reader.ReadByte(),
-				Code = new AssetLocation(reader.ReadString()),
-				AllowedVariants = reader.ReadBoolean() ? reader.ReadStringArray() : null,
-				Name = reader.ReadBoolean() ? reader.ReadString() : null,
-				Quantity = reader.ReadInt32(),
-			};
-
-		private static void WriteIngredient(BinaryWriter writer, Ingredient value)
-		{
-			writer.Write((byte)value.Type);
-			writer.Write(value.Code.ToString());
-			writer.Write(value.AllowedVariants != null);
-			if (value.AllowedVariants != null) writer.WriteArray(value.AllowedVariants);
-			writer.Write(value.Name != null);
-			if (value.Name != null) writer.Write(value.Name);
-			writer.Write(value.Quantity);
-		}
 	}
 
 	public class Ingredient : IEquatable<Ingredient>
