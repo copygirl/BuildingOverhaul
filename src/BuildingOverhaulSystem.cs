@@ -16,9 +16,11 @@ namespace BuildingOverhaul
 		public const string MOD_ID = "buildingoverhaul";
 
 		/// <summary> Failure code when no matching recipe was found for the held items. </summary>
-		public const string FAILURE_NO_RECIPE = MOD_ID + "-norecipe";
+		public const string FAILURE_NO_RECIPE = MOD_ID + ":norecipe";
+		/// <summary> Failure code when no matching recipe was found for the selected shape. </summary>
+		public const string FAILURE_NO_SHAPE = MOD_ID + ":noshape";
 		/// <summary> Failure code when the required materials aren't available in-inventory. </summary>
-		public const string FAILURE_NO_MATERIALS = MOD_ID + "-nomaterials";
+		public const string FAILURE_NO_MATERIALS = MOD_ID + ":nomaterials";
 
 
 		// == Common properties ==
@@ -35,6 +37,7 @@ namespace BuildingOverhaul
 		public ICoreClientAPI ClientAPI { get; private set; }
 		public IClientNetworkChannel ClientChannel { get; private set; }
 		public Harmony Harmony { get; } = new(MOD_ID);
+		public string CurrentShape { get; set; } = "block";
 
 		// == Server properties ==
 
@@ -53,6 +56,11 @@ namespace BuildingOverhaul
 				.SetMessageHandler<BuildingRecipes.Message>(Recipes.LoadFromMessage);
 
 			Harmony.PatchAll();
+
+			// We're using the IsPlayerReady event because it appears
+			// hotkeys are registered after StartClientSide is called?
+			api.Event.IsPlayerReady += (ref EnumHandling handling)
+				=> { HookToolSelectHotkey(); return true; };
 		}
 
 		public override void StartServerSide(ICoreServerAPI api)
@@ -70,11 +78,28 @@ namespace BuildingOverhaul
 
 		public override void Dispose()
 		{
-			// On client, undo the Harmony patch.
-			if (ClientAPI != null) {
-				Instance = null;
-				Harmony.UnpatchAll(MOD_ID);
-			}
+			if (ClientAPI == null) return;
+
+			Instance = null;
+			Harmony.UnpatchAll(MOD_ID);
+		}
+
+
+		/// <summary>
+		/// Hooks into the tool mode selection hotkey and instead shows
+		/// the selection dialog if a recipe is found for the held items.
+		/// </summary>
+		private void HookToolSelectHotkey()
+		{
+			var hotkey = ClientAPI.Input.HotKeys["toolmodeselect"];
+			var originalHandler = hotkey.Handler;
+			hotkey.Handler = (keyCombination) => {
+				// If a recipe exists for the currently held items, displays the shape
+				// selection dialog. Otherwise, calls the original hotkey handler.
+				var dialog = new GuiDialogShapeSelector(ClientAPI, Recipes, CurrentShape);
+				dialog.OnShapeSelected += shape => CurrentShape = shape;
+				return dialog.TryOpen() || originalHandler(keyCombination);
+			};
 		}
 
 
@@ -88,15 +113,15 @@ namespace BuildingOverhaul
 			var player    = ClientAPI.World.Player;
 			var selection = player.CurrentBlockSelection.Clone();
 
-			var result = TryBuild(player, selection, true);
+			var result = TryBuild(player, selection, CurrentShape, true);
 			if (result.IsSuccess)
-				ClientChannel.SendPacket(new BuildingMessage(selection));
+				ClientChannel.SendPacket(new BuildingMessage(selection, CurrentShape));
 			else {
 				// Ignore missing recipe failures, this just means we aren't holding the right items.
 				if ((result.FailureCode == FAILURE_NO_RECIPE)) return false;
 				// But otherwise do show an error message.
 				ClientAPI.TriggerIngameError(this, result.FailureCode,
-					Lang.Get("placefailure-" + result.FailureCode, result.LangParams));
+					Lang.Get(result.FailureCode, result.LangParams));
 			}
 
 			// Returning true will cause the Harmony patch to not continue the default
@@ -110,12 +135,9 @@ namespace BuildingOverhaul
 		/// </summary>
 		private void OnBuildingMessage(IServerPlayer player, BuildingMessage message)
 		{
-			var result = TryBuild(player, message.Selection, false);
-			if (!result.IsSuccess) {
-				// TODO: This sends an "ingameerror-*" message rather than "placefailure-*". Duh!
-				// player.SendIngameError(result.FailureCode, null, result.LangParams);
-				player.Entity.World.BlockAccessor.MarkBlockDirty(message.Selection.Position);
-			}
+			var result = TryBuild(player, message.Selection, message.Shape, false);
+			if (!result.IsSuccess) player.Entity.World.BlockAccessor
+				.MarkBlockDirty(message.Selection.Position);
 		}
 
 
@@ -128,32 +150,32 @@ namespace BuildingOverhaul
 		/// On server, represents the block where the player wants to build. (Selection has been pre-offset.)
 		/// </param>
 		/// <param name="doOffset"> Whether to offset selection if clicking a non-replacable block. True on client. </param>
-		private BuildResult TryBuild(IPlayer player, BlockSelection selection/*, shape? */, bool doOffset)
+		private BuildResult TryBuild(IPlayer player, BlockSelection selection, string shape, bool doOffset)
 		{
 			var inventory   = player.InventoryManager;
 			var offhandItem = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName)[10].Itemstack;
 			var hotbarItem  = inventory.ActiveHotbarSlot.Itemstack;
-			if (!Recipes.TryGet(offhandItem, hotbarItem, out var recipe, out var output))
-				return new(){ FailureCode = FAILURE_NO_RECIPE };
 
-			var world    = player.Entity.World;
-			var newBlock = world.GetBlock(output);
-			if (newBlock == null) {
-				Mod.Logger.Warning("Could not find block '{0}' for recipe '{1}'", output, recipe.Location);
-				return new(){ FailureCode = FAILURE_NO_RECIPE };
-			}
+			var matches = Recipes.Find(offhandItem, hotbarItem, ClientAPI.World);
+			if (matches.Count == 0) return new(FAILURE_NO_RECIPE);
+
+			var match = matches.Find(match => match.Recipe.Shape == shape);
+			if (match == null) return new(FAILURE_NO_SHAPE, shape, hotbarItem.GetName());
+
+			var world = player.Entity.World;
+			var block = match.Output;
 
 			if (doOffset) {
 				var clickedBlock = world.BlockAccessor.GetBlock(selection.Position);
-				if (!clickedBlock.IsReplacableBy(newBlock)) {
+				if (!clickedBlock.IsReplacableBy(block)) {
 					selection.Position.Offset(selection.Face);
 					selection.DidOffset = true;
 				}
 			}
 
 			var failureCode = "__ignore__";
-			return newBlock.TryPlaceBlock(world, player, new(newBlock), selection, ref failureCode)
-				? new() : new(){ FailureCode = failureCode };
+			return block.TryPlaceBlock(world, player, new(block), selection, ref failureCode)
+				? new() : new("placefailure-" + failureCode);
 		}
 
 		/// <summary>
@@ -162,10 +184,13 @@ namespace BuildingOverhaul
 		/// </summary>
 		private class BuildResult
 		{
-			public string FailureCode  = "__ignore__";
-			public object[] LangParams = new object[0];
+			public string FailureCode { get; }
+			public object[] LangParams { get; }
 
 			public bool IsSuccess => (FailureCode == "__ignore__");
+
+			public BuildResult(string failureCode = "__ignore__", params object[] langParams)
+				{ FailureCode = failureCode; LangParams = langParams; }
 		}
 	}
 }

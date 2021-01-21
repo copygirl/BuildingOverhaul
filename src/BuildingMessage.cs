@@ -11,6 +11,8 @@ namespace BuildingOverhaul
 		private byte _face;
 		private Vec3d _hitPosition;
 
+		public string Shape { get; }
+
 		public BlockSelection Selection => new BlockSelection {
 			Position    = _position,
 			Face        = BlockFacing.ALLFACES[_face],
@@ -19,11 +21,12 @@ namespace BuildingOverhaul
 
 		private BuildingMessage() {  }
 
-		public BuildingMessage(BlockSelection selection)
+		public BuildingMessage(BlockSelection selection, string shape)
 		{
 			_position    = selection.Position;
 			_face        = (byte)selection.Face.Index;
 			_hitPosition = selection.HitPosition;
+			Shape        = shape;
 		}
 	}
 }

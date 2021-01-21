@@ -1,4 +1,8 @@
 {
-  "placefailure-buildingoverhaul-norecipe": "Cannot build without a valid recipe",
-  "placefailure-buildingoverhaul-nomaterials": "Cannot build {0}, missing required materials"
+  "selectshape" : "Select Building Shape",
+  "ingredients" : "Building Cost:",
+
+  "norecipe"    : "Cannot build without a valid recipe",
+  "noshape"     : "Cannot build shape '{0}' with {1}",
+  "nomaterials" : "Cannot build {0}, missing required materials"
 }

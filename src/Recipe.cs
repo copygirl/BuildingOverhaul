@@ -33,7 +33,7 @@ namespace BuildingOverhaul
 		public int Quantity { get; set; } = 1;
 
 		internal bool Matches(ItemStack stack)
-			=> (Type == stack.Collectible.ItemClass) &&
+			=> (Type == stack?.Collectible?.ItemClass) &&
 			   WildcardUtil.Match(Code, stack.Collectible.Code, AllowedVariants);
 
 		public bool Equals(Ingredient other)

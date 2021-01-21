@@ -15,42 +15,46 @@ namespace BuildingOverhaul
 		/// <summary> Created once in <see cref="LoadFromAssets"/> to be sent to players when they join the server. </summary>
 		public Message CachedMessage { get; private set; }
 
+		[ProtoContract(ImplicitFields = ImplicitFields.AllFields)]
+		public class Message { internal byte[] _data; }
 
-		/// <summary> Attempts to find a recipe matching the specified tool and material. </summary>
+
+		/// <summary> Finds all recipes matching the specified tool and material. </summary>
 		/// <param name="tool"> The tool stack, typically an item held in the offhand slot. </param>
 		/// <param name="material"> The material stack, typically an item held in the active hotbar slot. </param>
-		/// <param name="recipe"> Contains the matched recipe if found, <c>null</c> otherwise. </param>
-		/// <param name="output"> Contains the output of the matched recipe for the specified tool and material. </param>
-		/// <returns> <c>true</c> if matching recipe could be found, <c>false</c> otherwise. </returns>
-		public bool TryGet(ItemStack tool, ItemStack material,
-		                   out Recipe recipe, out AssetLocation output)
+		/// <param name="resolver"> The world accessor to use for resolving blocks and items. </param>
+		/// <returns> An ordered dictionary (keyed by shape) containing all matched recipes, empty if none. </returns>
+		public List<RecipeMatch> Find(ItemStack tool, ItemStack material, IWorldAccessor resolver)
 		{
-			recipe = null; output = null;
-
 			var recipes = _byTool.Find(list => list[0].Tool.Matches(tool));
-			if (recipes == null) return false;
-			recipe = recipes.Find(r => r.Material.Matches(material));
-			if (recipe == null) return false;
+			if ((recipes == null) || (material == null)) return new();
 
-			var output2 = recipe.Output.Clone();
-			void ApplyNameToCodeMapping(Ingredient wildcard, ItemStack stack)
-			{
-				if (wildcard.Name == null) return;
-				var recipePath = wildcard.Code.Path;
-				var actualPath = stack.Collectible.Code.Path;
-				var wildcardIndex = recipePath.IndexOf('*');
-				// Extract the code ("acacia") from the stack ("game:plank-acacia").
-				var code = actualPath.Substring(wildcardIndex, actualPath.Length - recipePath.Length + 1);
-				// Apply the mapping so "game:plank-{wood}" will turn into "game:plank-acacia".
-				output2.Path = output2.Path.Replace("{" + wildcard.Name + "}", code);
+			var matches = new List<RecipeMatch>();
+			foreach (var recipe in recipes) {
+				if (!recipe.Material.Matches(material)) continue;
+				var ingredients = new List<ItemStack>(recipe.Ingredients.Length);
+				foreach (var ingredient in recipe.Ingredients) {
+					var ingredientLoc = ingredient.Code
+						.ApplyMapping(recipe.Tool, tool)
+						.ApplyMapping(recipe.Material, material);
+					var collectible = (ingredient.Type == EnumItemClass.Block)
+						? (CollectibleObject)resolver.GetBlock(ingredientLoc)
+						: (CollectibleObject)resolver.GetItem(ingredientLoc);
+					if (collectible == null) goto skip;
+					ingredients.Add(new ItemStack(collectible, ingredient.Quantity));
+				}
+
+				var outputLoc = recipe.Output
+					.ApplyMapping(recipe.Tool, tool)
+					.ApplyMapping(recipe.Material, material);
+				var output = resolver.GetBlock(outputLoc);
+				if (output == null) continue;
+
+				matches.Add(new RecipeMatch(recipe, ingredients, output));
+				skip: {  }
 			}
-			ApplyNameToCodeMapping(recipe.Tool, tool);
-			ApplyNameToCodeMapping(recipe.Material, material);
-
-			output = output2;
-			return true;
+			return matches;
 		}
-
 
 		/// <summary> Called when the client receives a recipes message, which
 		///           contains all of the server's building recipes, loading them. </summary>
@@ -174,11 +178,37 @@ namespace BuildingOverhaul
 			if (value.Name != null) writer.Write(value.Name);
 			writer.Write(value.Quantity);
 		}
+	}
 
-		[ProtoContract(ImplicitFields = ImplicitFields.AllFields)]
-		public class Message
+	/// <summary> A matched recipe with its ingredients and outputs resolved. </summary>
+	public class RecipeMatch
+	{
+		public Recipe Recipe { get; }
+		public List<ItemStack> Ingredients { get; }
+		public Block Output { get; }
+		public RecipeMatch(Recipe recipe, List<ItemStack> ingredients, Block output)
+			{ Recipe = recipe; Ingredients = ingredients; Output = output; }
+	}
+
+	static class AssetLocationExtensions
+	{
+		/// <summary>
+		/// Applies "name => code" mapping to this AssetLocation's path, if
+		/// the specified wildcard ingredient has a name associated with it.
+		/// </summary>
+		internal static AssetLocation ApplyMapping(this AssetLocation loc,
+			Ingredient wildcard, ItemStack stack)
 		{
-			internal byte[] _data;
+			if (wildcard.Name == null) return loc;
+			var recipePath = wildcard.Code.Path;
+			var actualPath = stack.Collectible.Code.Path;
+			// Find the index of the wildcard in the ingredient ("game:plank-*").
+			var wildcardIndex = recipePath.IndexOf('*');
+			// Extract the code ("acacia") from the stack ("game:plank-acacia").
+			var code = actualPath.Substring(wildcardIndex, actualPath.Length - recipePath.Length + 1);
+			// Apply the mapping so "game:plank-{wood}" will turn into "game:plank-acacia".
+			var path = loc.Path.Replace("{" + wildcard.Name + "}", code);
+			return new(loc.Domain, path);
 		}
 	}
 }
