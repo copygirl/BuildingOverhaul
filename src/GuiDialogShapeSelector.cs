@@ -20,7 +20,7 @@ namespace BuildingOverhaul
 		public List<RecipeMatch> Recipes { get; }
 
 		private List<SkillItem> RecipeItems { get; }
-		private List<ItemStack> IngredientItems { get; } = new(){ new() };
+		private List<ItemStack> IngredientItems { get; } = new(){  };
 		private GuiElementSkillItemGrid RecipeGrid { get; set; }
 
 		/// <summary> Called when a recipe is selected in the grid, closing the dialog afterwards. </summary>
@@ -32,21 +32,19 @@ namespace BuildingOverhaul
 			var inventory = capi.World.Player.InventoryManager;
 			ToolStack     = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName)[10].Itemstack;
 			MaterialStack = inventory.ActiveHotbarSlot.Itemstack;
-			Recipes       = recipes.Find(ToolStack, MaterialStack, capi.World);
+			Recipes       = recipes.Find(ToolStack, MaterialStack);
 
 			RecipeItems = Recipes
-				.Select(recipe => new ItemStack(recipe.Output))
-				.Select(stack => new SkillItem {
-					Code = stack.Collectible.Code,
-					Name = stack.GetName(),
-					Data = stack.StackSize,
+				.Select(recipe => new SkillItem {
+					Code = recipe.Output.Collectible.Code,
+					Name = recipe.Output.GetName(),
+					Data = recipe.Output.StackSize,
 					RenderHandler = (code, dt, posX, posY) => {
 						var size = GuiElement.scaled(SLOT_SIZE - 5);
-						capi.Render.RenderItemstackToGui(new DummySlot(stack), posX + size / 2, posY + size / 2, 100,
+						capi.Render.RenderItemstackToGui(new DummySlot(recipe.Output), posX + size / 2, posY + size / 2, 100,
 							(float)GuiElement.scaled(GuiElementPassiveItemSlot.unscaledItemSize), ColorUtil.WhiteArgb);
 					}
-				})
-				.ToList();
+				}).ToList();
 
 			if (Recipes.Count > 0)
 				SetupDialog(currentShape);
@@ -98,6 +96,8 @@ namespace BuildingOverhaul
 
 		private void OnSlotOver(int index)
 		{
+			if (index >= Recipes.Count) return;
+
 			// OnSlotOver appears to be called every frame, potentially to allow for custom rendering code.
 			// Since updating the elements might be slightly expensive, we only want to know when it changes.
 			if (index == RecipeGrid.selectedIndex) return;
@@ -112,6 +112,8 @@ namespace BuildingOverhaul
 
 		private void OnSlotClick(int index)
 		{
+			// TODO: Click to select only (OnSlotOver does nothing), but don't close.
+			//       Press tool mode selection hotkey again to close instead.
 			OnShapeSelected?.Invoke(Recipes[index].Recipe.Shape);
 			TryClose();
 		}
@@ -133,7 +135,8 @@ namespace BuildingOverhaul
 
 		public override bool CalcBounds(TextFlowPath[] flowPath, double currentLineHeight, double lineX, double lineY)
 		{
-			BoundsPerLine = new LineRectangled[]{ new(0, 0, Items.Count * (_size + 3), _size + 3) };
+			var width = Math.Max(1.0, Items.Count * (_size + 3));
+			BoundsPerLine = new LineRectangled[]{ new(0, 0, width, _size + 3) };
 			return false;
 		}
 

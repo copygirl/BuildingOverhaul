@@ -25,6 +25,9 @@ namespace BuildingOverhaul
 
 		// == Common properties ==
 
+		/// <summary> Statically available instance of the API for resolving purposes. </summary>
+		public static ICoreAPI API { get; private set; }
+
 		/// <summary> List of recipes grouped by which tools they share, such as "game:hammer-*". </summary>
 		public BuildingRecipes Recipes { get; } = new();
 
@@ -44,28 +47,27 @@ namespace BuildingOverhaul
 		public ICoreServerAPI ServerAPI { get; private set; }
 		public IServerNetworkChannel ServerChannel { get; private set; }
 
-
 		public override void StartClientSide(ICoreClientAPI api)
 		{
-			Instance  = this;
-			ClientAPI = api;
+			Instance = this;
+			API = ClientAPI = api;
 
 			ClientChannel = api.Network.RegisterChannel(MOD_ID)
 				.RegisterMessageType<BuildingMessage>()
 				.RegisterMessageType<BuildingRecipes.Message>()
 				.SetMessageHandler<BuildingRecipes.Message>(Recipes.LoadFromMessage);
 
-			Harmony.PatchAll();
-
 			// We're using the IsPlayerReady event because it appears
 			// hotkeys are registered after StartClientSide is called?
 			api.Event.IsPlayerReady += (ref EnumHandling handling)
-				=> { HookToolSelectHotkey(); return true; };
+				=> { HookToolModeSelectHotkey(); return true; };
+
+			Harmony.PatchAll();
 		}
 
 		public override void StartServerSide(ICoreServerAPI api)
 		{
-			ServerAPI = api;
+			API = ServerAPI = api;
 
 			ServerChannel = api.Network.RegisterChannel(MOD_ID)
 				.RegisterMessageType<BuildingMessage>()
@@ -78,10 +80,11 @@ namespace BuildingOverhaul
 
 		public override void Dispose()
 		{
-			if (ClientAPI == null) return;
-
-			Instance = null;
-			Harmony.UnpatchAll(MOD_ID);
+			API = null;
+			if (ClientAPI != null) {
+				Instance = null;
+				Harmony.UnpatchAll(MOD_ID);
+			}
 		}
 
 
@@ -89,7 +92,7 @@ namespace BuildingOverhaul
 		/// Hooks into the tool mode selection hotkey and instead shows
 		/// the selection dialog if a recipe is found for the held items.
 		/// </summary>
-		private void HookToolSelectHotkey()
+		private void HookToolModeSelectHotkey()
 		{
 			var hotkey = ClientAPI.Input.HotKeys["toolmodeselect"];
 			var originalHandler = hotkey.Handler;
@@ -156,14 +159,14 @@ namespace BuildingOverhaul
 			var offhandItem = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName)[10].Itemstack;
 			var hotbarItem  = inventory.ActiveHotbarSlot.Itemstack;
 
-			var matches = Recipes.Find(offhandItem, hotbarItem, ClientAPI.World);
+			var matches = Recipes.Find(offhandItem, hotbarItem);
 			if (matches.Count == 0) return new(FAILURE_NO_RECIPE);
 
 			var match = matches.Find(match => match.Recipe.Shape == shape);
 			if (match == null) return new(FAILURE_NO_SHAPE, shape, hotbarItem.GetName());
 
 			var world = player.Entity.World;
-			var block = match.Output;
+			var block = match.Output.Block;
 
 			if (doOffset) {
 				var clickedBlock = world.BlockAccessor.GetBlock(selection.Position);
@@ -174,8 +177,9 @@ namespace BuildingOverhaul
 			}
 
 			var failureCode = "__ignore__";
-			return block.TryPlaceBlock(world, player, new(block), selection, ref failureCode)
+			return block.TryPlaceBlock(world, player, match.Output, selection, ref failureCode)
 				? new() : new("placefailure-" + failureCode);
+			// FIXME: Update neighboring blocks.
 		}
 
 		/// <summary>
@@ -186,9 +190,7 @@ namespace BuildingOverhaul
 		{
 			public string FailureCode { get; }
 			public object[] LangParams { get; }
-
 			public bool IsSuccess => (FailureCode == "__ignore__");
-
 			public BuildResult(string failureCode = "__ignore__", params object[] langParams)
 				{ FailureCode = failureCode; LangParams = langParams; }
 		}

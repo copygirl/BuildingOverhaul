@@ -1,0 +1,25 @@
+[{
+  "shape": "pathblock",
+  "tool": { "code": "game:shovel-*" },
+  "material": { "code": "game:stone-*", "name": "rock" },
+  "ingredients": [{ "code": "game:stone-{rock}", "quantity": 4 }],
+  "replaceBlock": { "code": "game:soil-*-none",
+                    "allowedVariants": [ "verylow", "low", "medium" ] },
+  "output": "game:stonepath-free"
+},{
+  "shape": "pathstair",
+  "tool": { "code": "game:shovel-*" },
+  "material": { "code": "game:stone-*", "name": "rock" },
+  "ingredients": [{ "code": "game:stone-{rock}", "quantity": 3 }],
+  "replaceBlock": { "code": "game:soil-*-none",
+                    "allowedVariants": [ "verylow", "low", "medium" ] },
+  "output": "game:stonepathstairs-up-north-free"
+},{
+  "shape": "pathslab",
+  "tool": { "code": "game:shovel-*" },
+  "material": { "code": "game:stone-*", "name": "rock" },
+  "ingredients": [{ "code": "game:stone-{rock}", "quantity": 2 }],
+  "replaceBlock": { "code": "game:soil-*-none",
+                    "allowedVariants": [ "verylow", "low", "medium" ] },
+  "output": "game:stonepathslab-free"
+}]

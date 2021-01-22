@@ -5,6 +5,7 @@ using Vintagestory.Client.NoObf;
 
 namespace BuildingOverhaul
 {
+	// TODO: Allow block interaction before attempting to build.
 	[HarmonyPatch(typeof(SystemMouseInWorldInteractions), "HandleMouseInteractionsBlockSelected")]
 	class SystemMouseInWorldInteractions_HandleMouseInteractionsBlockSelected_Patch
 	{

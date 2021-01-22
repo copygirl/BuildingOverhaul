@@ -1,0 +1,105 @@
+[{
+  "shape": "chest",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [{ "code": "game:plank-{wood}", "quantity": 8 }],
+  "output": { "code": "game:chest-east", "attributes": { "type": "normal-generic" } }
+},{
+  "shape": "labeledchest",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [
+    { "code": "game:plank-{wood}", "quantity": 10 },
+    { "code": "game:stick" }
+  ],
+  "output": { "code": "game:labeledchest-east", "attributes": { "type": "normal-labeled" } }
+},{
+  "shape": "barrel",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [
+    { "code": "game:plank-{wood}", "quantity": 3 },
+    { "code": "game:stick", "quantity": 4 }
+  ],
+  "output": "game:barrel"
+},{
+  "shape": "moldrack",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [
+    { "code": "game:plank-{wood}", "quantity": 3 },
+    { "code": "game:stick", "quantity": 4 }
+  ],
+  "output": "game:moldrack-normal-east"
+},{
+  "shape": "shelf",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [{ "code": "game:plank-{wood}", "quantity": 4 }],
+  "output": "game:shelf-normal-east"
+},{
+  "shape": "sign",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [
+    { "code": "game:plank-{wood}", "quantity": 2 },
+    { "code": "game:stick" }
+  ],
+  "output": "game:sign-ground-north"
+},{
+  "shape": "signpost",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [
+    { "code": "game:plank-{wood}" },
+    { "code": "game:stick", "quantity": 2 }
+  ],
+  "output": "game:signpost"
+},{
+  "shape": "door",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [{ "code": "game:plank-{wood}", "quantity": 6 }],
+  "output": "game:woodendoor-north-down-closed-left"
+},{
+  "shape": "trapdoor",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [
+    { "code": "game:plank-{wood}", "quantity": 3 },
+    { "code": "game:stick", "quantity": 2 }
+  ],
+  "output": "game:trapdoor-closed-up-north"
+},{
+  "shape": "table",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood",
+                "allowedVariants": [ "birch", "oak", "maple", "pine", "acacia", "kapok" ] },
+  "ingredients": [{ "code": "game:plank-{wood}", "quantity": 7 }],
+  "output": "game:table-normal"
+},{
+  "shape": "chair",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood",
+                "allowedVariants": [ "birch", "oak", "maple", "pine", "acacia", "kapok" ] },
+  "ingredients": [
+    { "code": "game:plank-{wood}", "quantity": 4 },
+    { "type": "block", "code": "game:linen-normal-down" }
+  ],
+  "output": "game:chair-normal"
+},{
+  "shape": "table",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-aged" },
+  "ingredients": [{ "code": "game:plank-aged", "quantity": 7 }],
+  "output": "game:table-aged"
+},{
+  "shape": "chair",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-aged" },
+  "ingredients": [
+    { "code": "game:plank-aged", "quantity": 4 },
+    { "type": "block", "code": "game:linen-normal-down" }
+  ],
+  "output": "game:chair-aged"
+}]

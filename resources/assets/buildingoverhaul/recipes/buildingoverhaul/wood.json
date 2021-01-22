@@ -16,4 +16,22 @@
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [{ "code": "game:plank-{wood}", "quantity": 2 }],
   "output": "game:plankslab-{wood}-down-free"
+},{
+  "shape": "fence",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [
+    { "code": "game:plank-{wood}" },
+    { "code": "game:stick" }
+  ],
+  "output": "game:woodenfence-{wood}-ew-free"
+},{
+  "shape": "fencegate",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [
+    { "code": "game:plank-{wood}" },
+    { "code": "game:stick", "quantity": 2 }
+  ],
+  "output": "game:woodenfencegate-{wood}-n-closed-left-free"
 }]

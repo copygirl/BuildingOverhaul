@@ -4,6 +4,7 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using ProtoBuf;
 using Vintagestory.API.Common;
+using Vintagestory.API.Datastructures;
 using Vintagestory.API.Util;
 
 namespace BuildingOverhaul
@@ -22,11 +23,11 @@ namespace BuildingOverhaul
 		/// <summary> Finds all recipes matching the specified tool and material. </summary>
 		/// <param name="tool"> The tool stack, typically an item held in the offhand slot. </param>
 		/// <param name="material"> The material stack, typically an item held in the active hotbar slot. </param>
-		/// <param name="resolver"> The world accessor to use for resolving blocks and items. </param>
 		/// <returns> An ordered dictionary (keyed by shape) containing all matched recipes, empty if none. </returns>
-		public List<RecipeMatch> Find(ItemStack tool, ItemStack material, IWorldAccessor resolver)
+		public List<RecipeMatch> Find(ItemStack tool, ItemStack material)
 		{
-			var recipes = _byTool.Find(list => list[0].Tool.Matches(tool));
+			var resolver = BuildingOverhaulSystem.API.World;
+			var recipes  = _byTool.Find(list => list[0].Tool.Matches(tool));
 			if ((recipes == null) || (material == null)) return new();
 
 			var matches = new List<RecipeMatch>();
@@ -44,12 +45,14 @@ namespace BuildingOverhaul
 					ingredients.Add(new ItemStack(collectible, ingredient.Quantity));
 				}
 
-				var outputLoc = recipe.Output
+				var outputLoc = recipe.Output.Code
 					.ApplyMapping(recipe.Tool, tool)
 					.ApplyMapping(recipe.Material, material);
-				var output = resolver.GetBlock(outputLoc);
-				if (output == null) continue;
+				var block = resolver.GetBlock(outputLoc);
+				if (block == null) continue;
 
+				var attributes = (TreeAttribute)recipe.Output.Attributes ?? new TreeAttribute();
+				var output     = new ItemStack(block.Id, EnumItemClass.Block, 1, attributes, resolver);
 				matches.Add(new RecipeMatch(recipe, ingredients, output));
 				skip: {  }
 			}
@@ -143,7 +146,7 @@ namespace BuildingOverhaul
 			Material = ReadIngredient(reader),
 			Ingredients = Enumerable.Range(0, reader.ReadByte())
 				.Select(i => ReadIngredient(reader)).ToArray(),
-			Output  = new AssetLocation(reader.ReadString()),
+			Output = ReadIngredient(reader),
 			ToolDurabilityCost = reader.ReadInt32(),
 		};
 		private static void WriteRecipe(BinaryWriter writer, Recipe value)
@@ -155,7 +158,7 @@ namespace BuildingOverhaul
 			writer.Write((byte)value.Ingredients.Length);
 			foreach (var ingredient in value.Ingredients)
 				WriteIngredient(writer, ingredient);
-			writer.Write(value.Output.ToString());
+			WriteIngredient(writer, value.Output);
 			// Enabled is assumed to be true, client should only receive enabled recipes.
 			writer.Write(value.ToolDurabilityCost);
 		}
@@ -165,6 +168,7 @@ namespace BuildingOverhaul
 			Type = (EnumItemClass)reader.ReadByte(),
 			Code = new AssetLocation(reader.ReadString()),
 			AllowedVariants = reader.ReadBoolean() ? reader.ReadStringArray() : null,
+			Attributes = ReadAttributes(reader),
 			Name = reader.ReadBoolean() ? reader.ReadString() : null,
 			Quantity = reader.ReadInt32(),
 		};
@@ -174,9 +178,26 @@ namespace BuildingOverhaul
 			writer.Write(value.Code.ToString());
 			writer.Write(value.AllowedVariants != null);
 			if (value.AllowedVariants != null) writer.WriteArray(value.AllowedVariants);
+			WriteAttributes(writer, value.Attributes);
 			writer.Write(value.Name != null);
 			if (value.Name != null) writer.Write(value.Name);
 			writer.Write(value.Quantity);
+		}
+
+		private static ITreeAttribute ReadAttributes(BinaryReader reader)
+		{
+			var count = reader.ReadInt32();
+			if (count == 0) return null;
+			var bytes = reader.ReadBytes(count);
+			return TreeAttribute.CreateFromBytes(bytes);
+		}
+		private static void WriteAttributes(BinaryWriter writer, ITreeAttribute value)
+		{
+			if (value != null) {
+				var bytes = ((TreeAttribute)value).ToBytes();
+				writer.Write(bytes.Length);
+				writer.Write(bytes);
+			} else writer.Write(0);
 		}
 	}
 
@@ -185,8 +206,8 @@ namespace BuildingOverhaul
 	{
 		public Recipe Recipe { get; }
 		public List<ItemStack> Ingredients { get; }
-		public Block Output { get; }
-		public RecipeMatch(Recipe recipe, List<ItemStack> ingredients, Block output)
+		public ItemStack Output { get; }
+		public RecipeMatch(Recipe recipe, List<ItemStack> ingredients, ItemStack output)
 			{ Recipe = recipe; Ingredients = ingredients; Output = output; }
 	}
 
