@@ -39,8 +39,8 @@ namespace BuildingOverhaul
 
 		public ICoreClientAPI ClientAPI { get; private set; }
 		public IClientNetworkChannel ClientChannel { get; private set; }
+		public GuiDialogShapeSelector Dialog { get; private set; }
 		public Harmony Harmony { get; } = new(MOD_ID);
-		public string CurrentShape { get; set; } = "block";
 
 		// == Server properties ==
 
@@ -56,6 +56,9 @@ namespace BuildingOverhaul
 				.RegisterMessageType<BuildingMessage>()
 				.RegisterMessageType<BuildingRecipes.Message>()
 				.SetMessageHandler<BuildingRecipes.Message>(Recipes.LoadFromMessage);
+
+			Dialog = new GuiDialogShapeSelector(api, Recipes);
+			api.Gui.RegisterDialog(Dialog);
 
 			// We're using the IsPlayerReady event because it appears
 			// hotkeys are registered after StartClientSide is called?
@@ -89,20 +92,16 @@ namespace BuildingOverhaul
 
 
 		/// <summary>
-		/// Hooks into the tool mode selection hotkey and instead shows
-		/// the selection dialog if a recipe is found for the held items.
+		/// Hooks into the tool mode selection hotkey and instead shows the selection
+		/// dialog if a recipe is found for the held items, or closes if already opened.
 		/// </summary>
 		private void HookToolModeSelectHotkey()
 		{
 			var hotkey = ClientAPI.Input.HotKeys["toolmodeselect"];
 			var originalHandler = hotkey.Handler;
-			hotkey.Handler = (keyCombination) => {
-				// If a recipe exists for the currently held items, displays the shape
-				// selection dialog. Otherwise, calls the original hotkey handler.
-				var dialog = new GuiDialogShapeSelector(ClientAPI, Recipes, CurrentShape);
-				dialog.OnShapeSelected += shape => CurrentShape = shape;
-				return dialog.TryOpen() || originalHandler(keyCombination);
-			};
+			hotkey.Handler = (keyCombination) => !Dialog.IsOpened()
+				? Dialog.TryOpen() || originalHandler(keyCombination)
+				: Dialog.TryClose();
 		}
 
 
@@ -116,9 +115,9 @@ namespace BuildingOverhaul
 			var player    = ClientAPI.World.Player;
 			var selection = player.CurrentBlockSelection.Clone();
 
-			var result = TryBuild(player, selection, CurrentShape, true);
+			var result = TryBuild(player, selection, Dialog.CurrentShape, true);
 			if (result.IsSuccess)
-				ClientChannel.SendPacket(new BuildingMessage(selection, CurrentShape));
+				ClientChannel.SendPacket(new BuildingMessage(selection, Dialog.CurrentShape));
 			else {
 				// Ignore missing recipe failures, this just means we aren't holding the right items.
 				if ((result.FailureCode == FAILURE_NO_RECIPE)) return false;
