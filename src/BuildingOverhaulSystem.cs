@@ -2,6 +2,7 @@ using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
+using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 
 [assembly: ModInfo("BuildingOverhaul",
@@ -23,7 +24,7 @@ namespace BuildingOverhaul
 		public const string FAILURE_NO_MATERIALS = MOD_ID + ":nomaterials";
 
 
-		// == Common properties ==
+		// == Common ==
 
 		/// <summary> Statically available instance of the API for resolving purposes. </summary>
 		public static ICoreAPI API { get; private set; }
@@ -31,7 +32,10 @@ namespace BuildingOverhaul
 		/// <summary> List of recipes grouped by which tools they share, such as "game:hammer-*". </summary>
 		public BuildingRecipes Recipes { get; } = new();
 
-		// == Client properties ==
+		private System.Action<BlockPos> TriggerNeighbourBlocksUpdate;
+
+
+		// == Client ==
 
 		/// <summary> Statically available instance of the system, used by
 		///           Harmony patch to call <see cref="OnInWorldInteract"/>. </summary>
@@ -40,12 +44,21 @@ namespace BuildingOverhaul
 		public ICoreClientAPI ClientAPI { get; private set; }
 		public IClientNetworkChannel ClientChannel { get; private set; }
 		public GuiDialogShapeSelector Dialog { get; private set; }
-		public Harmony Harmony { get; } = new(MOD_ID);
 
-		// == Server properties ==
+		private Harmony Harmony { get; } = new(MOD_ID);
+
+		private System.Action<BlockSelection, Block> TriggerBlockChanged;
+
+
+		// == Server ==
 
 		public ICoreServerAPI ServerAPI { get; private set; }
 		public IServerNetworkChannel ServerChannel { get; private set; }
+
+		private System.Action<IServerPlayer, BlockPos> RevertBlockInteractions;
+		private System.Action<IServerPlayer, int, BlockSelection, ItemStack> TriggerDidPlaceBlock;
+
+
 
 		public override void StartClientSide(ICoreClientAPI api)
 		{
@@ -66,6 +79,7 @@ namespace BuildingOverhaul
 				=> { HookToolModeSelectHotkey(); return true; };
 
 			Harmony.PatchAll();
+			InitializeClientReflection();
 		}
 
 		public override void StartServerSide(ICoreServerAPI api)
@@ -79,6 +93,8 @@ namespace BuildingOverhaul
 
 			api.Event.SaveGameLoaded += () => Recipes.LoadFromAssets(ServerAPI.Assets, Mod.Logger);
 			api.Event.PlayerJoin += player => ServerChannel.SendPacket(Recipes.CachedMessage, player);
+
+			InitializeServerReflection();
 		}
 
 		public override void Dispose()
@@ -88,6 +104,28 @@ namespace BuildingOverhaul
 				Instance = null;
 				Harmony.UnpatchAll(MOD_ID);
 			}
+		}
+
+
+		private void InitializeClientReflection()
+		{
+			var ClientMain   = ReflectionUtils.GetFieldValue(ClientAPI, "game");
+			var EventManager = ReflectionUtils.GetFieldValue(ClientMain, "eventManager");
+
+			TriggerNeighbourBlocksUpdate = ReflectionUtils.BuildAction<BlockPos>(ClientMain, "TriggerNeighbourBlocksUpdate");
+			var triggerBlockChangedDelegate = ReflectionUtils.CreateDelegate<Action<object, BlockSelection, Block>>(EventManager, "TriggerBlockChanged");
+			TriggerBlockChanged = (blockSel, oldBlock) => triggerBlockChangedDelegate(ClientMain, blockSel, oldBlock);
+		}
+
+		private void InitializeServerReflection()
+		{
+			var BlockSimulation = ServerAPI.ModLoader.GetModSystem("Vintagestory.Server.ServerSystemBlockSimulation");
+			var ServerMain      = ReflectionUtils.GetFieldValue(BlockSimulation, "server");
+			var EventManager    = ReflectionUtils.GetFieldValue(ServerMain, "EventManager");
+
+			RevertBlockInteractions      = ReflectionUtils.BuildAction<IServerPlayer, BlockPos>(BlockSimulation, "RevertBlockInteractions");
+			TriggerNeighbourBlocksUpdate = ReflectionUtils.BuildAction<BlockPos>(ServerMain, "TriggerNeighbourBlocksUpdate");
+			TriggerDidPlaceBlock         = ReflectionUtils.BuildAction<IServerPlayer, int, BlockSelection, ItemStack>(EventManager, "TriggerDidPlaceBlock");
 		}
 
 
@@ -116,9 +154,11 @@ namespace BuildingOverhaul
 			var selection = player.CurrentBlockSelection.Clone();
 
 			var result = TryBuild(player, selection, Dialog.CurrentShape, true);
-			if (result.IsSuccess)
+			if (result.IsSuccess) {
 				ClientChannel.SendPacket(new BuildingMessage(selection, Dialog.CurrentShape));
-			else {
+				TriggerBlockChanged(selection, result.OldBlock);
+				TriggerNeighbourBlocksUpdate(selection.Position);
+			} else {
 				// Ignore missing recipe failures, this just means we aren't holding the right items.
 				if ((result.FailureCode == FAILURE_NO_RECIPE)) return false;
 				// But otherwise do show an error message.
@@ -137,9 +177,14 @@ namespace BuildingOverhaul
 		/// </summary>
 		private void OnBuildingMessage(IServerPlayer player, BuildingMessage message)
 		{
-			var result = TryBuild(player, message.Selection, message.Shape, false);
-			if (!result.IsSuccess) player.Entity.World.BlockAccessor
-				.MarkBlockDirty(message.Selection.Position);
+			var position = message.Selection.Position;
+			var result   = TryBuild(player, message.Selection, message.Shape, false);
+			if (result.IsSuccess) {
+				TriggerNeighbourBlocksUpdate(position);
+				// Guess we'll just send a null ItemStack into this method because it's the held
+				// stack AFTER the placement occurs, which could just as well have been emptied.
+				TriggerDidPlaceBlock(player, result.OldBlock.Id, message.Selection, null);
+			} else RevertBlockInteractions(player, position);
 		}
 
 
@@ -176,9 +221,10 @@ namespace BuildingOverhaul
 			}
 
 			var failureCode = "__ignore__";
+			var oldBlock    = world.BlockAccessor.GetBlock(selection.Position);
 			return block.TryPlaceBlock(world, player, match.Output, selection, ref failureCode)
-				? new() : new("placefailure-" + failureCode);
-			// FIXME: Update neighboring blocks.
+				? new(oldBlock) : new("placefailure-" + failureCode);
+			// FIXME: Apply ingredient and tool durability cost.
 		}
 
 		/// <summary>
@@ -189,9 +235,14 @@ namespace BuildingOverhaul
 		{
 			public string FailureCode { get; }
 			public object[] LangParams { get; }
+			public Block OldBlock { get; } // Set when successful.
+
 			public bool IsSuccess => (FailureCode == "__ignore__");
-			public BuildResult(string failureCode = "__ignore__", params object[] langParams)
+
+			public BuildResult(string failureCode, params object[] langParams)
 				{ FailureCode = failureCode; LangParams = langParams; }
+			public BuildResult(Block oldBlock)
+				: this("__ignore__", new object[0]) { OldBlock = oldBlock; }
 		}
 	}
 }
