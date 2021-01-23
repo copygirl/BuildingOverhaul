@@ -2,6 +2,7 @@ using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
+using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 
 [assembly: ModInfo("BuildingOverhaul",
@@ -116,9 +117,10 @@ namespace BuildingOverhaul
 			var selection = player.CurrentBlockSelection.Clone();
 
 			var result = TryBuild(player, selection, Dialog.CurrentShape, true);
-			if (result.IsSuccess)
+			if (result.IsSuccess) {
 				ClientChannel.SendPacket(new BuildingMessage(selection, Dialog.CurrentShape));
-			else {
+				TriggerNeighbourBlocksUpdate(ClientAPI.World, selection.Position);
+			} else {
 				// Ignore missing recipe failures, this just means we aren't holding the right items.
 				if ((result.FailureCode == FAILURE_NO_RECIPE)) return false;
 				// But otherwise do show an error message.
@@ -137,9 +139,18 @@ namespace BuildingOverhaul
 		/// </summary>
 		private void OnBuildingMessage(IServerPlayer player, BuildingMessage message)
 		{
+			var world  = player.Entity.World;
 			var result = TryBuild(player, message.Selection, message.Shape, false);
-			if (!result.IsSuccess) player.Entity.World.BlockAccessor
-				.MarkBlockDirty(message.Selection.Position);
+			if (result.IsSuccess) TriggerNeighbourBlocksUpdate(world, message.Selection.Position);
+			else world.BlockAccessor.MarkBlockDirty(message.Selection.Position);
+		}
+
+		private static void TriggerNeighbourBlocksUpdate(IWorldAccessor world, BlockPos pos)
+		{
+			foreach (var facing in BlockFacing.ALLFACES) {
+				var position = pos.AddCopy(facing);
+				world.BlockAccessor.GetBlock(position).OnNeighbourBlockChange(world, position, pos);
+			}
 		}
 
 
@@ -178,7 +189,6 @@ namespace BuildingOverhaul
 			var failureCode = "__ignore__";
 			return block.TryPlaceBlock(world, player, match.Output, selection, ref failureCode)
 				? new() : new("placefailure-" + failureCode);
-			// FIXME: Update neighboring blocks.
 		}
 
 		/// <summary>
