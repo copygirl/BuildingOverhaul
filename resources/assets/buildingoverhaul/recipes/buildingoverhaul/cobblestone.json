@@ -1,28 +1,34 @@
 [{
   "shape": "block",
   "tool": { "code": "game:hammer-*" },
-  "material": { "code": "game:stone-*", "name": "rock" },
+  "material": { "code": "game:stone-*", "name": "rock", "allowedVariants": [
+    "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
+    "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
   "ingredients": [
     { "code": "game:stone-{rock}", "quantity": 4 },
-    { "code": "game:clay-blue" }
+    { "code": "game:clay-*" }
   ],
   "output": "game:cobblestone-{rock}"
 },{
   "shape": "stair",
   "tool": { "code": "game:hammer-*" },
-  "material": { "code": "game:stone-*", "name": "rock" },
+  "material": { "code": "game:stone-*", "name": "rock", "allowedVariants": [
+    "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
+    "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
   "ingredients": [
     { "code": "game:stone-{rock}", "quantity": 3 },
-    { "code": "game:clay-blue" }
+    { "code": "game:clay-*" }
   ],
   "output": "game:cobblestonestairs-{rock}-up-north-free"
 },{
   "shape": "slab",
   "tool": { "code": "game:hammer-*" },
-  "material": { "code": "game:stone-*", "name": "rock" },
+  "material": { "code": "game:stone-*", "name": "rock", "allowedVariants": [
+    "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
+    "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
   "ingredients": [
     { "code": "game:stone-{rock}", "quantity": 2 },
-    { "code": "game:clay-blue" }
+    { "code": "game:clay-*" }
   ],
   "output": "game:cobblestoneslab-{rock}-down-free"
 }]

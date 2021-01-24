@@ -1,7 +1,9 @@
 [{
   "shape": "pathblock",
   "tool": { "code": "game:hammer-*" },
-  "material": { "code": "game:stone-*", "name": "rock" },
+  "material": { "code": "game:stone-*", "name": "rock", "allowedVariants": [
+    "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
+    "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
   "ingredients": [
     { "code": "game:stone-{rock}", "quantity": 4 },
     { "type": "block", "code": "game:soil-*-none",
@@ -11,7 +13,9 @@
 },{
   "shape": "pathstair",
   "tool": { "code": "game:hammer-*" },
-  "material": { "code": "game:stone-*", "name": "rock" },
+  "material": { "code": "game:stone-*", "name": "rock", "allowedVariants": [
+    "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
+    "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
   "ingredients": [
     { "code": "game:stone-{rock}", "quantity": 3 },
     { "type": "block", "code": "game:soil-*-none",
@@ -21,7 +25,9 @@
 },{
   "shape": "pathslab",
   "tool": { "code": "game:hammer-*" },
-  "material": { "code": "game:stone-*", "name": "rock" },
+  "material": { "code": "game:stone-*", "name": "rock", "allowedVariants": [
+    "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
+    "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
   "ingredients": [
     { "code": "game:stone-{rock}", "quantity": 2 },
     { "type": "block", "code": "game:soil-*-none",

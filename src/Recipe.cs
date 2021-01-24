@@ -41,16 +41,19 @@ namespace BuildingOverhaul
 		public EnumItemClass Type { get; set; }
 		public AssetLocation Code { get; set; }
 		public string[] AllowedVariants { get; set; } = null;
-		[JsonConverter(typeof(TreeAttributesConverter))]
-		public ITreeAttribute Attributes { get; set; }
 
-		// Name and Quantity are not relevant for equality.
+		// Name, Quantity and Attributes are not relevant for equality.
 		public string Name { get; set; } = null;
 		public int Quantity { get; set; } = 1;
+		[JsonConverter(typeof(TreeAttributesConverter))]
+		public ITreeAttribute Attributes { get; set; } = null;
+
+		internal bool Matches(CollectibleObject collectible)
+			=> (Type == collectible?.ItemClass) &&
+			   WildcardUtil.Match(Code, collectible.Code, AllowedVariants);
 
 		internal bool Matches(ItemStack stack)
-			=> (Type == stack?.Collectible?.ItemClass) &&
-			   WildcardUtil.Match(Code, stack.Collectible.Code, AllowedVariants) &&
+			=> Matches(stack?.Collectible) &&
 			   (Attributes?.IsSubSetOf(BuildingOverhaulSystem.API.World, stack.Attributes) ?? true);
 
 		public bool Equals(Ingredient other)
@@ -58,9 +61,7 @@ namespace BuildingOverhaul
 			return (other != null) && (Type == other.Type) && Code.Equals(other.Code) &&
 			       ((AllowedVariants == other.AllowedVariants) ||
 			        ((AllowedVariants != null) && (other.AllowedVariants != null) &&
-			         AllowedVariants.SequenceEqual(other.AllowedVariants))) &&
-			       (Attributes?.Equals(BuildingOverhaulSystem.API.World, other.Attributes) ??
-				    object.ReferenceEquals(Attributes, other.Attributes));
+			         AllowedVariants.SequenceEqual(other.AllowedVariants)));
 		}
 
 		public override bool Equals(object obj)
@@ -74,8 +75,6 @@ namespace BuildingOverhaul
 			if (AllowedVariants != null)
 			foreach (var variant in AllowedVariants)
 				hashCode = hashCode * -1521134295 + variant.GetHashCode();
-			if (Attributes != null)
-				hashCode = hashCode * -1521134295 + Attributes.GetHashCode();
 			return hashCode;
 		}
 

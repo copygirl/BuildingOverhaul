@@ -23,7 +23,7 @@ namespace BuildingOverhaul
 
 		private BuildingRecipes Recipes { get; }
 		private List<SkillItem> RecipeItems { get; } = new(){  };
-		private List<ItemStack> IngredientItems { get; } = new(){  };
+		private List<List<ItemStack>> IngredientItems { get; } = new(){  };
 		private GuiElementSkillItemGrid RecipeGrid { get; set; }
 
 		public string CurrentShape { get; private set; } = "block";
@@ -149,16 +149,15 @@ namespace BuildingOverhaul
 
 	public class IngredientsTextComponent : ItemstackComponentBase
 	{
-		public List<ItemStack> Items { get; }
+		public List<List<ItemStack>> Items { get; }
 
 		private DummySlot _slot = new();
 		private double _size = 40;
 
-		// TODO: Rotate matching ingredients.
-		// float secondsVisible = 1;
-		// int curItemIndex;
+		private float _secondsVisible = 1.0F;
+		private int _currentItemIndex = 1;
 
-		public IngredientsTextComponent(ICoreClientAPI api, List<ItemStack> items)
+		public IngredientsTextComponent(ICoreClientAPI api, List<List<ItemStack>> items)
 			: base(api) { Items = items; }
 
 		public override bool CalcBounds(TextFlowPath[] flowPath, double currentLineHeight, double lineX, double lineY)
@@ -179,13 +178,13 @@ namespace BuildingOverhaul
 
 		public override void RenderInteractiveElements(float deltaTime, double renderX, double renderY)
 		{
-			// if ((secondsVisible -= deltaTime) <= 0) {
-			// 	secondsVisible = 1;
-			// 	curItemIndex = (curItemIndex + 1) % GridRecipes.Length;
-			// }
+			if ((_secondsVisible -= deltaTime) <= 0) {
+				_currentItemIndex++;
+				_secondsVisible = 1.0F;
+			}
 
 			for (var i = 0; i < Items.Count; i++) {
-				_slot.Itemstack = Items[i];
+				_slot.Itemstack = Items[i][_currentItemIndex % Items[i].Count];
 				var rx = renderX + i * (_size + 3);
 				var ry = renderY;
 

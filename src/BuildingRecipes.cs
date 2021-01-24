@@ -12,6 +12,7 @@ namespace BuildingOverhaul
 	public class BuildingRecipes
 	{
 		private List<List<Recipe>> _byTool;
+		private Dictionary<Ingredient, List<CollectibleObject>> _ingredientLookup;
 
 		/// <summary> Created once in <see cref="LoadFromAssets"/> to be sent to players when they join the server. </summary>
 		public Message CachedMessage { get; private set; }
@@ -33,16 +34,22 @@ namespace BuildingOverhaul
 			var matches = new List<RecipeMatch>();
 			foreach (var recipe in recipes) {
 				if (!recipe.Material.Matches(material)) continue;
-				var ingredients = new List<ItemStack>(recipe.Ingredients.Length);
+				var ingredients = new List<List<ItemStack>>(recipe.Ingredients.Length);
 				foreach (var ingredient in recipe.Ingredients) {
-					var ingredientLoc = ingredient.Code
-						.ApplyMapping(recipe.Tool, tool)
-						.ApplyMapping(recipe.Material, material);
-					var collectible = (ingredient.Type == EnumItemClass.Block)
-						? (CollectibleObject)resolver.GetBlock(ingredientLoc)
-						: (CollectibleObject)resolver.GetItem(ingredientLoc);
-					if (collectible == null) goto skip;
-					ingredients.Add(new ItemStack(collectible, ingredient.Quantity));
+					if (ingredient.Code.IsWildCard) {
+						if (_ingredientLookup.TryGetValue(ingredient, out var collectibles))
+							ingredients.Add(collectibles.Select(collectible =>
+								new ItemStack(collectible, ingredient.Quantity)).ToList());
+					} else {
+						var ingredientLoc = ingredient.Code
+							.ApplyMapping(recipe.Tool, tool)
+							.ApplyMapping(recipe.Material, material);
+						var collectible = (ingredient.Type == EnumItemClass.Block)
+							? (CollectibleObject)resolver.GetBlock(ingredientLoc)
+							: (CollectibleObject)resolver.GetItem(ingredientLoc);
+						if (collectible == null) goto skip;
+						ingredients.Add(new(){ new ItemStack(collectible, ingredient.Quantity) });
+					}
 				}
 
 				var outputLoc = recipe.Output.Code
@@ -62,7 +69,10 @@ namespace BuildingOverhaul
 		/// <summary> Called when the client receives a recipes message, which
 		///           contains all of the server's building recipes, loading them. </summary>
 		public void LoadFromMessage(Message message)
-			=> FromBytes(message._data);
+		{
+			FromBytes(message._data);
+			ResolveIngredients();
+		}
 
 		/// <summary>
 		/// Called when the savegame is loaded, parses building recipes from JSON assets.
@@ -99,8 +109,33 @@ namespace BuildingOverhaul
 				case JArray arr: foreach (var token in arr) LoadRecipe(asset.Key, token); break;
 			}
 
+			ResolveIngredients();
 			CachedMessage = new Message { _data = ToBytes() };
 			logger.Event("{0} building recipes loaded", count);
+		}
+
+		public void ResolveIngredients()
+		{
+			var world = BuildingOverhaulSystem.API.World;
+
+			// Collect all unique wildcard ingredients as keys in the ingredient lookup dictionary.
+			_ingredientLookup = _byTool
+				.SelectMany(recipesByTool => recipesByTool)
+				.SelectMany(recipe => new []{ recipe.Tool, recipe.Material, recipe.Output }.Concat(recipe.Ingredients))
+				.Where(ingredient => ingredient.Code.IsWildCard)
+				.Distinct()
+				.ToDictionary(i => i, _ => new List<CollectibleObject>());
+
+			// Go through all blocks and items in the game and match them up with the ingredients.
+			foreach (var collectible in world.Blocks.Concat<CollectibleObject>(world.Items)) {
+				if (collectible?.IsMissing != false) continue;
+				foreach (var kvp in _ingredientLookup) {
+					if (kvp.Key.Matches(collectible)) {
+						kvp.Value.Add(collectible);
+						break;
+					}
+				}
+			}
 		}
 
 
@@ -168,9 +203,9 @@ namespace BuildingOverhaul
 			Type = (EnumItemClass)reader.ReadByte(),
 			Code = new AssetLocation(reader.ReadString()),
 			AllowedVariants = reader.ReadBoolean() ? reader.ReadStringArray() : null,
+			Name       = reader.ReadBoolean() ? reader.ReadString() : null,
+			Quantity   = reader.ReadInt32(),
 			Attributes = ReadAttributes(reader),
-			Name = reader.ReadBoolean() ? reader.ReadString() : null,
-			Quantity = reader.ReadInt32(),
 		};
 		private static void WriteIngredient(BinaryWriter writer, Ingredient value)
 		{
@@ -178,10 +213,10 @@ namespace BuildingOverhaul
 			writer.Write(value.Code.ToString());
 			writer.Write(value.AllowedVariants != null);
 			if (value.AllowedVariants != null) writer.WriteArray(value.AllowedVariants);
-			WriteAttributes(writer, value.Attributes);
 			writer.Write(value.Name != null);
 			if (value.Name != null) writer.Write(value.Name);
 			writer.Write(value.Quantity);
+			WriteAttributes(writer, value.Attributes);
 		}
 
 		private static ITreeAttribute ReadAttributes(BinaryReader reader)
@@ -205,9 +240,9 @@ namespace BuildingOverhaul
 	public class RecipeMatch
 	{
 		public Recipe Recipe { get; }
-		public List<ItemStack> Ingredients { get; }
+		public List<List<ItemStack>> Ingredients { get; }
 		public ItemStack Output { get; }
-		public RecipeMatch(Recipe recipe, List<ItemStack> ingredients, ItemStack output)
+		public RecipeMatch(Recipe recipe, List<List<ItemStack>> ingredients, ItemStack output)
 			{ Recipe = recipe; Ingredients = ingredients; Output = output; }
 	}
 
