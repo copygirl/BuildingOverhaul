@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
+using Vintagestory.API.Common;
 using Vintagestory.Client.NoObf;
 
 namespace BuildingOverhaul
 {
-	// TODO: Allow block interaction before attempting to build.
 	[HarmonyPatch(typeof(SystemMouseInWorldInteractions), "HandleMouseInteractionsBlockSelected")]
 	class SystemMouseInWorldInteractions_HandleMouseInteractionsBlockSelected_Patch
 	{
@@ -14,28 +15,48 @@ namespace BuildingOverhaul
 			ILGenerator generator)
 		{
 			var enumerator = instructions.GetEnumerator();
+			var beginOnInWorldInteraction = generator.DefineLabel();
 
-			// Yield instructions until this specific one:
-			//   var handling = EnumHandling.PassThrough;
-			var HANDLING_INDEX = 7; // Index of the handling method local.
+			// Yield instructions until the first call to the EntityControls.Sneak getter.
+			var SneakGetter = typeof(EntityControls).GetProperty(nameof(EntityControls.Sneak)).GetMethod;
 			while (enumerator.MoveNext()) {
 				yield return enumerator.Current;
-				if ((enumerator.Current.opcode == OpCodes.Stloc_S) &&
-					(enumerator.Current.operand is LocalBuilder local) &&
-					(local.LocalIndex == HANDLING_INDEX)) break;
+				if (enumerator.Current.Is(OpCodes.Callvirt, SneakGetter)) break;
 			}
+
+			// Next instruction is "brtrue.s".
+			enumerator.MoveNext();
+			// Extract the instruction's label.
+			var afterOnInWorldInteraction = (Label)enumerator.Current.operand;
+			// Replace this instruction with one that instead jumps
+			// to the beginning of the InWorldInteraction call.
+			yield return new(OpCodes.Brtrue_S, beginOnInWorldInteraction);
+
+			// Yield further instructions until the call to TryBeginUseBlock.
+			var TryBeginUseBlock = typeof(SystemMouseInWorldInteractions).GetMethod(
+				"TryBeginUseBlock", BindingFlags.Instance | BindingFlags.NonPublic);
+			while (enumerator.MoveNext()) {
+				yield return enumerator.Current;
+				if (enumerator.Current.Is(OpCodes.Call, TryBeginUseBlock)) break;
+			}
+
+			// Next instruction is "brfalse.s"
+			enumerator.MoveNext();
+			// Also replace this instruction with one that jumps
+			// to the beginning of the InWorldInteraction call.
+			yield return new(OpCodes.Brfalse_S, beginOnInWorldInteraction);
+			// Next instruction is "ret", just yield it.
+			enumerator.MoveNext();
+			yield return enumerator.Current;
 
 			// Insert call to BuildingOverhaulSystem.Instance.OnInWorldInteract.
 			// If OnInWorldInteract returns true, return from the method immediately.
-			var falseLabel = generator.DefineLabel();
-			yield return new(OpCodes.Call, typeof(BuildingOverhaulSystem).GetProperty(nameof(BuildingOverhaulSystem.Instance)).GetMethod);
-			yield return new(OpCodes.Callvirt, typeof(BuildingOverhaulSystem).GetMethod(nameof(BuildingOverhaulSystem.OnInWorldInteract)));
-			yield return new(OpCodes.Brfalse_S, falseLabel);
+			var GetInstance       = typeof(BuildingOverhaulSystem).GetProperty(nameof(BuildingOverhaulSystem.Instance)).GetMethod;
+			var OnInWorldInteract = typeof(BuildingOverhaulSystem).GetMethod(nameof(BuildingOverhaulSystem.OnInWorldInteract));
+			yield return new(OpCodes.Call, GetInstance){ labels = new(){ beginOnInWorldInteraction } };
+			yield return new(OpCodes.Callvirt, OnInWorldInteract);
+			yield return new(OpCodes.Brfalse_S, afterOnInWorldInteraction);
 			yield return new(OpCodes.Ret);
-
-			// Replace the following instruction so we can specify the label to jump to.
-			enumerator.MoveNext();
-			yield return new(enumerator.Current){ labels = new(){ falseLabel } };
 
 			// Yield the rest of the instructions.
 			while (enumerator.MoveNext())

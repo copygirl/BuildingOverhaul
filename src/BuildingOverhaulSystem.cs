@@ -130,8 +130,8 @@ namespace BuildingOverhaul
 					Lang.Get(result.FailureCode, result.LangParams));
 			}
 
-			// Returning true will cause the Harmony patch to not continue the default
-			// behavior, preventing block interaction, item usage and block placement.
+			// Returning true will cause the Harmony patch to not continue the
+			// default behavior, preventing item usage and block placement.
 			return true;
 		}
 
