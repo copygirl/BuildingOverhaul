@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -141,8 +143,14 @@ namespace BuildingOverhaul
 		{
 			var world  = player.Entity.World;
 			var result = TryBuild(player, message.Selection, message.Shape, false);
-			if (result.IsSuccess) TriggerNeighbourBlocksUpdate(world, message.Selection.Position);
-			else world.BlockAccessor.MarkBlockDirty(message.Selection.Position);
+			if (result.IsSuccess)
+				TriggerNeighbourBlocksUpdate(world, message.Selection.Position);
+			else {
+				// These methods unfortunately send the block and player data to all nearby
+				// players rather than just the original one, but we'll just live with that.
+				world.BlockAccessor.MarkBlockDirty(message.Selection.Position);
+				player.BroadcastPlayerData(true);
+			}
 		}
 
 		private static void TriggerNeighbourBlocksUpdate(IWorldAccessor world, BlockPos pos)
@@ -175,6 +183,13 @@ namespace BuildingOverhaul
 			var match = matches.Find(match => match.Recipe.Shape == shape);
 			if (match == null) return new(FAILURE_NO_SHAPE, shape, hotbarItem.GetName());
 
+			System.Action takeIngredients = null;
+			if (player.WorldData.CurrentGameMode != EnumGameMode.Creative) {
+				// If not in creative mode, test to see if the required materials are available.
+				takeIngredients = FindIngredients(inventory, match);
+				if (takeIngredients == null) return new(FAILURE_NO_MATERIALS, match.Output.GetName());
+			}
+
 			var world = player.Entity.World;
 			var block = match.Output.Block;
 
@@ -187,8 +202,48 @@ namespace BuildingOverhaul
 			}
 
 			var failureCode = "__ignore__";
-			return block.TryPlaceBlock(world, player, match.Output, selection, ref failureCode)
-				? new() : new("placefailure-" + failureCode);
+			if (!block.TryPlaceBlock(world, player, match.Output, selection, ref failureCode))
+				return new("placefailure-" + failureCode);
+
+			// Actually take the required ingredients out of
+			// the player's inventory (if not in creative mode).
+			takeIngredients?.Invoke();
+			return new();
+		}
+
+		/// <summary>
+		/// Attempts to find the ingredients for the specified matched recipe in the specified player inventory
+		/// (backpack and hotbar). If all required ingredients are found, returns an action that can be invoked
+		/// to take those ingredients out of the player's inventory. If they are not found, returns <c>null</c>.
+		/// </summary>
+		private System.Action FindIngredients(IPlayerInventoryManager inventory, RecipeMatch match)
+		{
+			var backpack = inventory.GetOwnInventory(GlobalConstants.backpackInvClassName);
+			var hotbar   = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName);
+			var allSlots = backpack.Concat(hotbar);
+
+			System.Action takeIngredients = null;
+			foreach (var ingredient in match.Ingredients) {
+				var remaining = ingredient[0].StackSize;
+				foreach (var slot in allSlots) {
+					if ((slot?.Itemstack == null) ||
+					    !ingredient.Any(stack => slot.Itemstack.Satisfies(stack))) continue;
+					var count = Math.Min(slot.Itemstack.StackSize, remaining);
+					takeIngredients += () => {
+						slot.Itemstack.StackSize -= count;
+						if (slot.Itemstack.StackSize <= 0) {
+							slot.Itemstack = null;
+							if (slot == inventory.ActiveHotbarSlot)
+								inventory.BroadcastHotbarSlot();
+						}
+						slot.MarkDirty();
+					};
+					remaining -= count;
+					if (remaining <= 0) break;
+				}
+				if (remaining > 0) return null;
+			}
+			return takeIngredients;
 		}
 
 		/// <summary>
