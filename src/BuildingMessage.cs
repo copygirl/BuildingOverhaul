@@ -10,6 +10,7 @@ namespace BuildingOverhaul
 		private BlockPos _position;
 		private byte _face;
 		private Vec3d _hitPosition;
+		private bool _didOffset;
 
 		public string Shape { get; }
 
@@ -17,6 +18,7 @@ namespace BuildingOverhaul
 			Position    = _position,
 			Face        = BlockFacing.ALLFACES[_face],
 			HitPosition = _hitPosition,
+			DidOffset   = _didOffset,
 		};
 
 		private BuildingMessage() {  }
@@ -26,6 +28,7 @@ namespace BuildingOverhaul
 			_position    = selection.Position;
 			_face        = (byte)selection.Face.Index;
 			_hitPosition = selection.HitPosition;
+			_didOffset   = selection.DidOffset;
 			Shape        = shape;
 		}
 	}
