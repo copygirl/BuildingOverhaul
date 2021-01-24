@@ -5,8 +5,8 @@
 		<Authors>copygirl</Authors>
 		<Version>0.0.0</Version>
 
-		<Description></Description>
-		<RepositoryUrl></RepositoryUrl>
+		<Description>Vintage Story mod which allows building using materials instead of having to craft and carry individual building blocks in your inventory</Description>
+		<RepositoryUrl>https://github.com/copygirl/BuildingOverhaul</RepositoryUrl>
 
 		<TargetFramework>net452</TargetFramework>
 		<LangVersion>latest</LangVersion>
@@ -20,14 +20,6 @@
 		</Reference>
 		<Reference Include="VintagestoryAPI">
 			<HintPath>$(VINTAGE_STORY)/VintagestoryAPI.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="VSEssentials">
-			<HintPath>$(VINTAGE_STORY)/Mods/VSEssentials.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="VSSurvivalMod">
-			<HintPath>$(VINTAGE_STORY)/Mods/VSSurvivalMod.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 

@@ -6,8 +6,8 @@ using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 
 [assembly: ModInfo("BuildingOverhaul",
-	Description = "",
-	Website = "",
+	Description = "Allows building using materials instead of having to craft and carry individual building blocks in your inventory",
+	Website = "https://github.com/copygirl/BuildingOverhaul",
 	Authors = new[] { "copygirl" })]
 
 namespace BuildingOverhaul
