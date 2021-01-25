@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using ProtoBuf;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.Util;
 
@@ -65,6 +67,48 @@ namespace BuildingOverhaul
 			}
 			return matches;
 		}
+
+		/// <summary>
+		/// Attempts to find the ingredients for the specified matched recipe in the specified player inventory
+		/// (backpack and hotbar). If all required ingredients are found, returns an action that can be invoked
+		/// to take those ingredients out of the player's inventory. If they are not found, returns <c>null</c>.
+		/// </summary>
+		/// <param name="missing"> List which is filled to map ingredient to missing amount (by index). </param>
+		public System.Action FindIngredients(IPlayerInventoryManager inventory, RecipeMatch match, List<int> missing = null)
+		{
+			var backpack = inventory.GetOwnInventory(GlobalConstants.backpackInvClassName);
+			var hotbar   = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName);
+			var allSlots = backpack.Concat(hotbar);
+
+			System.Action takeIngredients = null;
+			missing?.Clear(); var anyMissing = false;
+			for (var i = 0; i < match.Recipe.Ingredients.Length; i++) {
+				var ingredient = match.Recipe.Ingredients[i];
+				var resolved   = match.Ingredients[i];
+				var remaining  = ingredient.Quantity;
+				foreach (var slot in allSlots) {
+					if ((slot?.Itemstack == null) ||
+					    !resolved.Any(stack => slot.Itemstack.Satisfies(stack))) continue;
+					var count = Math.Min(slot.Itemstack.StackSize, remaining);
+					takeIngredients += () => {
+						slot.Itemstack.StackSize -= count;
+						if (slot.Itemstack.StackSize <= 0) {
+							slot.Itemstack = null;
+							if (slot == inventory.ActiveHotbarSlot)
+								inventory.BroadcastHotbarSlot();
+						}
+						slot.MarkDirty();
+					};
+					remaining -= count;
+					if (remaining <= 0) break;
+				}
+				missing?.Add(remaining);
+				if (remaining > 0) anyMissing = true;
+			}
+			if (anyMissing) return null;
+			return takeIngredients;
+		}
+
 
 		/// <summary> Called when the client receives a recipes message, which
 		///           contains all of the server's building recipes, loading them. </summary>

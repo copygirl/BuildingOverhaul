@@ -23,13 +23,14 @@ namespace BuildingOverhaul
 
 		private BuildingRecipes Recipes { get; }
 		private List<SkillItem> RecipeItems { get; } = new(){  };
-		private List<List<ItemStack>> IngredientItems { get; } = new(){  };
 		private GuiElementSkillItemGrid RecipeGrid { get; set; }
 
 		public string CurrentShape { get; private set; } = "block";
 		public ItemStack ToolStack { get; private set; }
 		public ItemStack MaterialStack { get; private set; }
 		public List<RecipeMatch> MatchedRecipes { get; private set; }
+		public List<List<ItemStack>> IngredientItems { get; } = new(){  };
+		public List<int> MissingIngredients { get; } = new();
 
 		private readonly ElementBounds _recipesBounds;
 		private readonly ElementBounds _nameBounds;
@@ -68,7 +69,7 @@ namespace BuildingOverhaul
 					.AddStaticText(Lang.Get(BuildingOverhaulSystem.MOD_ID + ":ingredients"),
 					               CairoFont.WhiteDetailText(), EnumTextOrientation.Left, _ingredientBounds)
 					// List of required ingredients that can be hovered to see their tooltip.
-					.AddRichtext(new []{ new IngredientsTextComponent(capi, IngredientItems) }, _ingredientsBounds, "ingredients")
+					.AddRichtext(new []{ new IngredientsTextComponent(capi, this) }, _ingredientsBounds, "ingredients")
 				.EndChildElements()
 				.Compose();
 
@@ -84,6 +85,9 @@ namespace BuildingOverhaul
 			// If held items change, attempt to get new recipes, closing if no recipes were found.
 			if ((toolStack != ToolStack) || (materialStack != MaterialStack))
 			if (!TryOpen()) { TryClose(); return; }
+
+			if (RecipeGrid.selectedIndex >= 0)
+				Recipes.FindIngredients(inventory, MatchedRecipes[RecipeGrid.selectedIndex], MissingIngredients);
 
 			base.OnRenderGUI(deltaTime);
 		}
@@ -149,7 +153,8 @@ namespace BuildingOverhaul
 
 	public class IngredientsTextComponent : ItemstackComponentBase
 	{
-		public List<List<ItemStack>> Items { get; }
+		public GuiDialogShapeSelector Dialog { get; }
+		public List<List<ItemStack>> Items => Dialog.IngredientItems;
 
 		private DummySlot _slot = new();
 		private double _size = 40;
@@ -157,8 +162,8 @@ namespace BuildingOverhaul
 		private float _secondsVisible = 1.0F;
 		private int _currentItemIndex = 1;
 
-		public IngredientsTextComponent(ICoreClientAPI api, List<List<ItemStack>> items)
-			: base(api) { Items = items; }
+		public IngredientsTextComponent(ICoreClientAPI api, GuiDialogShapeSelector dialog)
+			: base(api) { Dialog = dialog; }
 
 		public override bool CalcBounds(TextFlowPath[] flowPath, double currentLineHeight, double lineX, double lineY)
 		{
@@ -188,9 +193,15 @@ namespace BuildingOverhaul
 				var rx = renderX + i * (_size + 3);
 				var ry = renderY;
 
+				if (Dialog.MissingIngredients[i] > 0) {
+					var color = ColorUtil.ToRgba(255 / 5, 255, 0, 0);
+					api.Render.RenderRectangle((float)rx, (float)ry, 80.0F, (float)_size, (float)_size, color);
+					api.Render.RenderRectangle((float)rx + 1, (float)ry + 1, 80.0F, (float)_size - 2, (float)_size - 2, color);
+				}
+
 				api.Render.RenderItemstackToGui(_slot,
-					rx + _size * 0.5f, ry + _size * 0.5f, 100,
-					(float)_size * 0.58f, ColorUtil.WhiteArgb);
+					rx + _size * 0.5F, ry + _size * 0.5F, 100.0F,
+					(float)_size * 0.58F, ColorUtil.WhiteArgb);
 
 				double dx = api.Input.MouseX - rx;
 				double dy = api.Input.MouseY - ry;

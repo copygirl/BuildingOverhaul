@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -186,7 +184,7 @@ namespace BuildingOverhaul
 			System.Action takeIngredients = null;
 			if (player.WorldData.CurrentGameMode != EnumGameMode.Creative) {
 				// If not in creative mode, test to see if the required materials are available.
-				takeIngredients = FindIngredients(inventory, match);
+				takeIngredients = Recipes.FindIngredients(inventory, match);
 				if (takeIngredients == null) return new(FAILURE_NO_MATERIALS, match.Output.GetName());
 			}
 
@@ -209,41 +207,6 @@ namespace BuildingOverhaul
 			// the player's inventory (if not in creative mode).
 			takeIngredients?.Invoke();
 			return new();
-		}
-
-		/// <summary>
-		/// Attempts to find the ingredients for the specified matched recipe in the specified player inventory
-		/// (backpack and hotbar). If all required ingredients are found, returns an action that can be invoked
-		/// to take those ingredients out of the player's inventory. If they are not found, returns <c>null</c>.
-		/// </summary>
-		private System.Action FindIngredients(IPlayerInventoryManager inventory, RecipeMatch match)
-		{
-			var backpack = inventory.GetOwnInventory(GlobalConstants.backpackInvClassName);
-			var hotbar   = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName);
-			var allSlots = backpack.Concat(hotbar);
-
-			System.Action takeIngredients = null;
-			foreach (var ingredient in match.Ingredients) {
-				var remaining = ingredient[0].StackSize;
-				foreach (var slot in allSlots) {
-					if ((slot?.Itemstack == null) ||
-					    !ingredient.Any(stack => slot.Itemstack.Satisfies(stack))) continue;
-					var count = Math.Min(slot.Itemstack.StackSize, remaining);
-					takeIngredients += () => {
-						slot.Itemstack.StackSize -= count;
-						if (slot.Itemstack.StackSize <= 0) {
-							slot.Itemstack = null;
-							if (slot == inventory.ActiveHotbarSlot)
-								inventory.BroadcastHotbarSlot();
-						}
-						slot.MarkDirty();
-					};
-					remaining -= count;
-					if (remaining <= 0) break;
-				}
-				if (remaining > 0) return null;
-			}
-			return takeIngredients;
 		}
 
 		/// <summary>
