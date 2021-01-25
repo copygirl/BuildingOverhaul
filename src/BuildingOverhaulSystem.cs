@@ -171,9 +171,8 @@ namespace BuildingOverhaul
 		/// <param name="doOffset"> Whether to offset selection if clicking a non-replacable block. True on client. </param>
 		private BuildResult TryBuild(IPlayer player, BlockSelection selection, string shape, bool doOffset)
 		{
-			var inventory   = player.InventoryManager;
-			var offhandItem = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName)[10].Itemstack;
-			var hotbarItem  = inventory.ActiveHotbarSlot.Itemstack;
+			var offhandItem = player.Entity.LeftHandItemSlot.Itemstack;
+			var hotbarItem  = player.Entity.RightHandItemSlot.Itemstack;
 
 			var matches = Recipes.Find(offhandItem, hotbarItem);
 			if (matches.Count == 0) return new(FAILURE_NO_RECIPE);
@@ -181,11 +180,11 @@ namespace BuildingOverhaul
 			var match = matches.Find(match => match.Recipe.Shape == shape);
 			if (match == null) return new(FAILURE_NO_SHAPE, shape, hotbarItem.GetName());
 
-			System.Action takeIngredients = null;
+			System.Action applyBuildingCost = null;
 			if (player.WorldData.CurrentGameMode != EnumGameMode.Creative) {
 				// If not in creative mode, test to see if the required materials are available.
-				takeIngredients = Recipes.FindIngredients(inventory, match);
-				if (takeIngredients == null) return new(FAILURE_NO_MATERIALS, match.Output.GetName());
+				applyBuildingCost = Recipes.FindIngredients(player, match);
+				if (applyBuildingCost == null) return new(FAILURE_NO_MATERIALS, match.Output.GetName());
 			}
 
 			var world = player.Entity.World;
@@ -205,7 +204,7 @@ namespace BuildingOverhaul
 
 			// Actually take the required ingredients out of
 			// the player's inventory (if not in creative mode).
-			takeIngredients?.Invoke();
+			applyBuildingCost?.Invoke();
 			return new();
 		}
 

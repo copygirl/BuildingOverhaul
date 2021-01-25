@@ -81,25 +81,25 @@ namespace BuildingOverhaul
 
 		public override void OnRenderGUI(float deltaTime)
 		{
-			var inventory     = capi.World.Player.InventoryManager;
-			var toolStack     = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName)[10].Itemstack;
-			var materialStack = inventory.ActiveHotbarSlot.Itemstack;
+			var player = capi.World.Player;
+			var toolStack     = player.Entity.LeftHandItemSlot.Itemstack;
+			var materialStack = player.Entity.RightHandItemSlot.Itemstack;
 
 			// If held items change, attempt to get new recipes, closing if no recipes were found.
 			if ((toolStack != ToolStack) || (materialStack != MaterialStack))
 			if (!TryOpen()) { TryClose(); return; }
 
 			if (RecipeGrid.selectedIndex >= 0)
-				Recipes.FindIngredients(inventory, MatchedRecipes[RecipeGrid.selectedIndex], MissingIngredients);
+				Recipes.FindIngredients(player, MatchedRecipes[RecipeGrid.selectedIndex], MissingIngredients);
 
 			base.OnRenderGUI(deltaTime);
 		}
 
 		public override bool TryOpen()
 		{
-			var inventory  = capi.World.Player.InventoryManager;
-			ToolStack      = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName)[10].Itemstack;
-			MaterialStack  = inventory.ActiveHotbarSlot.Itemstack;
+			var player = capi.World.Player;
+			ToolStack      = player.Entity.LeftHandItemSlot.Itemstack;
+			MaterialStack  = player.Entity.RightHandItemSlot.Itemstack;
 			MatchedRecipes = Recipes.Find(ToolStack, MaterialStack);
 			if (MatchedRecipes.Count == 0) return false;
 

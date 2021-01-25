@@ -71,16 +71,18 @@ namespace BuildingOverhaul
 		/// <summary>
 		/// Attempts to find the ingredients for the specified matched recipe in the specified player inventory
 		/// (backpack and hotbar). If all required ingredients are found, returns an action that can be invoked
-		/// to take those ingredients out of the player's inventory. If they are not found, returns <c>null</c>.
+		/// to take those ingredients out of the player's inventory and apply damage to the held tool.
+		/// If they are not found, returns <c>null</c>.
 		/// </summary>
 		/// <param name="missing"> List which is filled to map ingredient to missing amount (by index). </param>
-		public System.Action FindIngredients(IPlayerInventoryManager inventory, RecipeMatch match, List<int> missing = null)
+		public System.Action FindIngredients(IPlayer player, RecipeMatch match, List<int> missing = null)
 		{
-			var backpack = inventory.GetOwnInventory(GlobalConstants.backpackInvClassName);
-			var hotbar   = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName);
-			var allSlots = backpack.Concat(hotbar);
+			var inventory = player.InventoryManager;
+			var backpack  = inventory.GetOwnInventory(GlobalConstants.backpackInvClassName);
+			var hotbar    = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName);
+			var allSlots  = backpack.Concat(hotbar);
 
-			System.Action takeIngredients = null;
+			System.Action applyBuildingCost = null;
 			missing?.Clear(); var anyMissing = false;
 			for (var i = 0; i < match.Recipe.Ingredients.Length; i++) {
 				var ingredient = match.Recipe.Ingredients[i];
@@ -89,13 +91,8 @@ namespace BuildingOverhaul
 				foreach (var slot in allSlots) {
 					if (!resolved.Any(stack => stack.Satisfies(slot?.Itemstack))) continue;
 					var count = Math.Min(slot.Itemstack.StackSize, remaining);
-					takeIngredients += () => {
-						slot.Itemstack.StackSize -= count;
-						if (slot.Itemstack.StackSize <= 0) {
-							slot.Itemstack = null;
-							if (slot == inventory.ActiveHotbarSlot)
-								inventory.BroadcastHotbarSlot();
-						}
+					applyBuildingCost += () => {
+						slot.TakeOut(count);
 						slot.MarkDirty();
 					};
 					remaining -= count;
@@ -105,7 +102,13 @@ namespace BuildingOverhaul
 				if (remaining > 0) anyMissing = true;
 			}
 			if (anyMissing) return null;
-			return takeIngredients;
+			if (match.Recipe.ToolDurabilityCost > 0)
+				applyBuildingCost += () => {
+					var offhandSlot = player.Entity.LeftHandItemSlot;
+					offhandSlot.Itemstack.Item.DamageItem(player.Entity.World,
+						player.Entity, offhandSlot, match.Recipe.ToolDurabilityCost);
+				};
+			return applyBuildingCost;
 		}
 
 
