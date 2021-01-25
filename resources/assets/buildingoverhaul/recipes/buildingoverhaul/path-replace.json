@@ -1,6 +1,9 @@
 [{
+  "enabled": false,
+  "__comment": "Recipes using 'replaceBlock' aren't supported yet.",
+
   "shape": "pathblock",
-  "tool": { "code": "game:shovel-*" },
+  "tool": "game:shovel-*",
   "material": { "code": "game:stone-*", "name": "rock", "allowedVariants": [
     "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
     "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
@@ -9,8 +12,9 @@
                     "allowedVariants": [ "verylow", "low", "medium" ] },
   "output": "game:stonepath-free"
 },{
+  "enabled": false,
   "shape": "pathstair",
-  "tool": { "code": "game:shovel-*" },
+  "tool": "game:shovel-*",
   "material": { "code": "game:stone-*", "name": "rock", "allowedVariants": [
     "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
     "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
@@ -19,8 +23,9 @@
                     "allowedVariants": [ "verylow", "low", "medium" ] },
   "output": "game:stonepathstairs-up-north-free"
 },{
+  "enabled": false,
   "shape": "pathslab",
-  "tool": { "code": "game:shovel-*" },
+  "tool": "game:shovel-*",
   "material": { "code": "game:stone-*", "name": "rock", "allowedVariants": [
     "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
     "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },

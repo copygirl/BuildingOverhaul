@@ -1,6 +1,6 @@
 [{
   "shape": "block",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:stonebrick-*", "name": "rock", "allowedVariants": [
     "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
     "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
@@ -11,7 +11,7 @@
   "output": "game:stonebricks-{rock}"
 },{
   "shape": "stair",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:stonebrick-*", "name": "rock", "allowedVariants": [
     "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
     "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
@@ -22,7 +22,7 @@
   "output": "game:stonebrickstairs-{rock}-up-north-free"
 },{
   "shape": "slab",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:stonebrick-*", "name": "rock", "allowedVariants": [
     "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
     "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },

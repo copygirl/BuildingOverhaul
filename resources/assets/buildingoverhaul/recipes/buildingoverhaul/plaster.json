@@ -1,0 +1,40 @@
+[{
+  "shape": "plasterplain",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:sand-*", "name": "type" },
+  "ingredients": [
+    { "type": "block", "code": "game:sand-{type}" },
+    { "code": "game:quicklime" }
+  ],
+  "output": "game:plaster-plain"
+},{
+  "shape": "plastersquare",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:sand-*", "name": "type" },
+  "ingredients": [
+    { "type": "block", "code": "game:sand-{type}" },
+    { "code": "game:quicklime" },
+    { "code": "game:plank-*", "quantity": 4 }
+  ],
+  "output": "game:plaster-square"
+},{
+  "shape": "plasterdiagonal",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:sand-*", "name": "type" },
+  "ingredients": [
+    { "type": "block", "code": "game:sand-{type}" },
+    { "code": "game:quicklime" },
+    { "code": "game:plank-*", "quantity": 2 }
+  ],
+  "output": "game:plaster-diagonal-ud"
+},{
+  "shape": "plasterstripes",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:sand-*", "name": "type" },
+  "ingredients": [
+    { "type": "block", "code": "game:sand-{type}" },
+    { "code": "game:quicklime" },
+    { "code": "game:plank-*", "quantity": 2 }
+  ],
+  "output": "game:plaster-stripes-ud"
+}]

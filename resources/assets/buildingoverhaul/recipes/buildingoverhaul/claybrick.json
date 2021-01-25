@@ -1,6 +1,6 @@
 [{
   "shape": "block",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:burnedbrick-*", "name": "type" },
   "ingredients": [
     { "code": "game:burnedbrick-{type}", "quantity": 4 },
@@ -9,7 +9,7 @@
   "output": "game:claybricks-{type}"
 },{
   "shape": "stair",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:burnedbrick-*", "name": "type" },
   "ingredients": [
     { "code": "game:burnedbrick-{type}", "quantity": 3 },
@@ -18,7 +18,7 @@
   "output": "game:brickstairs-{type}-up-north-free"
 },{
   "shape": "slab",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:burnedbrick-*", "name": "type" },
   "ingredients": [
     { "code": "game:burnedbrick-{type}", "quantity": 2 },

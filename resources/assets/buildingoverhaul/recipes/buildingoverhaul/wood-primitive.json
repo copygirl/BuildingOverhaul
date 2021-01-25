@@ -1,6 +1,6 @@
 [{
   "shape": "fence",
-  "tool": { "code": "game:axe-*" },
+  "tool": "game:axe-*",
   "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
   "ingredients": [
     { "type": "block", "code": "game:log-placed-{wood}-ud" },
@@ -9,7 +9,7 @@
   "output": "game:roughhewnfence-{wood}-ew-free"
 },{
   "shape": "fencegate",
-  "tool": { "code": "game:axe-*" },
+  "tool": "game:axe-*",
   "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
   "ingredients": [
     { "type": "block", "code": "game:log-placed-{wood}-ud" },

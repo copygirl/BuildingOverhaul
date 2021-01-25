@@ -1,0 +1,13 @@
+[{
+  "shape": "bloomerybase",
+  "tool": "game:hammer-*",
+  "material": "game:burnedbrick-fire",
+  "ingredients": [{ "code": "game:burnedbrick-fire", "quantity": 8 }],
+  "output": "game:bloomerybase-north"
+},{
+  "shape": "bloomerychimney",
+  "tool": "game:hammer-*",
+  "material": "game:burnedbrick-fire",
+  "ingredients": [{ "code": "game:burnedbrick-fire", "quantity": 4 }],
+  "output": "game:bloomerychimney"
+}]

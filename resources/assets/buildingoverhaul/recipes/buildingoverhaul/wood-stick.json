@@ -1,0 +1,13 @@
+[{
+  "shape": "ladder",
+  "tool": "game:hammer-*",
+  "material": "game:stick",
+  "ingredients": [{ "code": "game:stick", "quantity": 2 }],
+  "output": "game:ladder-north"
+},{
+  "shape": "stickslayer",
+  "tool": "game:hammer-*",
+  "material": "game:stick",
+  "ingredients": [{ "code": "game:stick", "quantity": 9 }],
+  "output": "game:stickslayer-wooden-ew-free"
+}]

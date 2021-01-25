@@ -1,12 +1,12 @@
 [{
   "shape": "chest",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [{ "code": "game:plank-{wood}", "quantity": 8 }],
   "output": { "code": "game:chest-east", "attributes": { "type": "normal-generic" } }
 },{
   "shape": "labeledchest",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [
     { "code": "game:plank-{wood}", "quantity": 10 },
@@ -15,7 +15,7 @@
   "output": { "code": "game:labeledchest-east", "attributes": { "type": "normal-labeled" } }
 },{
   "shape": "barrel",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [
     { "code": "game:plank-{wood}", "quantity": 3 },
@@ -24,7 +24,7 @@
   "output": "game:barrel"
 },{
   "shape": "moldrack",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [
     { "code": "game:plank-{wood}", "quantity": 3 },
@@ -33,13 +33,13 @@
   "output": "game:moldrack-normal-east"
 },{
   "shape": "shelf",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [{ "code": "game:plank-{wood}", "quantity": 4 }],
   "output": "game:shelf-normal-east"
 },{
   "shape": "sign",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [
     { "code": "game:plank-{wood}", "quantity": 2 },
@@ -48,7 +48,7 @@
   "output": "game:sign-ground-north"
 },{
   "shape": "signpost",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [
     { "code": "game:plank-{wood}" },
@@ -57,13 +57,13 @@
   "output": "game:signpost"
 },{
   "shape": "door",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [{ "code": "game:plank-{wood}", "quantity": 6 }],
   "output": "game:woodendoor-north-down-closed-left"
 },{
   "shape": "trapdoor",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood" },
   "ingredients": [
     { "code": "game:plank-{wood}", "quantity": 3 },
@@ -72,14 +72,14 @@
   "output": "game:trapdoor-closed-up-north"
 },{
   "shape": "table",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood",
                 "allowedVariants": [ "birch", "oak", "maple", "pine", "acacia", "kapok" ] },
   "ingredients": [{ "code": "game:plank-{wood}", "quantity": 7 }],
   "output": "game:table-normal"
 },{
   "shape": "chair",
-  "tool": { "code": "game:hammer-*" },
+  "tool": "game:hammer-*",
   "material": { "code": "game:plank-*", "name": "wood",
                 "allowedVariants": [ "birch", "oak", "maple", "pine", "acacia", "kapok" ] },
   "ingredients": [
@@ -89,17 +89,38 @@
   "output": "game:chair-normal"
 },{
   "shape": "table",
-  "tool": { "code": "game:hammer-*" },
-  "material": { "code": "game:plank-aged" },
+  "tool": "game:hammer-*",
+  "material": "game:plank-aged",
   "ingredients": [{ "code": "game:plank-aged", "quantity": 7 }],
   "output": "game:table-aged"
 },{
   "shape": "chair",
-  "tool": { "code": "game:hammer-*" },
-  "material": { "code": "game:plank-aged" },
+  "tool": "game:hammer-*",
+  "material": "game:plank-aged",
   "ingredients": [
     { "code": "game:plank-aged", "quantity": 4 },
     { "type": "block", "code": "game:linen-normal-down" }
   ],
   "output": "game:chair-aged"
+},{
+  "shape": "displaycase",
+  "tool": "game:hammer-*",
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [
+    { "code": "game:plank-{wood}", "quantity": 2 },
+    { "type": "block", "code": "game:glass-plain" }
+  ],
+  "output": "game:displaycase"
+},{
+  "shape": "troughlarge",
+  "tool": "game:hammer-*",
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [{ "code": "game:plank-{wood}", "quantity": 5 }],
+  "output": "game:trough-genericwood-large-head-north"
+},{
+  "shape": "troughsmall",
+  "tool": "game:hammer-*",
+  "material": { "code": "game:plank-*", "name": "wood" },
+  "ingredients": [{ "code": "game:plank-{wood}", "quantity": 3 }],
+  "output": "game:trough-genericwood-small-ns"
 }]
