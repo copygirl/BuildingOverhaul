@@ -1,0 +1,34 @@
+[{
+  "shape": "block",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:stonebrick-*", "name": "rock", "allowedVariants": [
+    "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
+    "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
+  "ingredients": [
+    { "code": "game:stonebrick-{rock}", "quantity": 4 },
+    { "code": "game:mortar" }
+  ],
+  "output": "game:stonebricks-{rock}"
+},{
+  "shape": "stair",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:stonebrick-*", "name": "rock", "allowedVariants": [
+    "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
+    "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
+  "ingredients": [
+    { "code": "game:stonebrick-{rock}", "quantity": 3 },
+    { "code": "game:mortar" }
+  ],
+  "output": "game:stonebrickstairs-{rock}-up-north-free"
+},{
+  "shape": "slab",
+  "tool": { "code": "game:hammer-*" },
+  "material": { "code": "game:stonebrick-*", "name": "rock", "allowedVariants": [
+    "andesite", "chalk", "chert", "conglomerate", "limestone", "claystone", "granite",
+    "sandstone", "shale", "basalt", "peridotite", "phyllite", "slate", "bauxite" ] },
+  "ingredients": [
+    { "code": "game:stonebrick-{rock}", "quantity": 2 },
+    { "code": "game:mortar" }
+  ],
+  "output": "game:stonebrickslab-{rock}-down-free"
+}]
