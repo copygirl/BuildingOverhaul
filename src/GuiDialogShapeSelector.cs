@@ -40,6 +40,8 @@ namespace BuildingOverhaul
 		private readonly FieldInfo _colsField = typeof(GuiElementSkillItemGrid).GetField("cols", BindingFlags.Instance | BindingFlags.NonPublic);
 		private readonly FieldInfo _rowsField = typeof(GuiElementSkillItemGrid).GetField("rows", BindingFlags.Instance | BindingFlags.NonPublic);
 
+		public override bool PrefersUngrabbedMouse => false;
+
 		public GuiDialogShapeSelector(ICoreClientAPI capi, BuildingRecipes recipes)
 			: base(Lang.Get(DIALOG_NAME), capi)
 		{
@@ -57,7 +59,8 @@ namespace BuildingOverhaul
 			backgroundBounds.BothSizing = ElementSizing.FitToChildren;
 
 			SingleComposer = capi.Gui
-				.CreateCompo(DIALOG_NAME, ElementStdBounds.AutosizedMainDialog)
+				.CreateCompo(DIALOG_NAME, ElementStdBounds.AutosizedMainDialog
+					.WithFixedAlignmentOffset(0, 200))
 				.AddShadedDialogBG(backgroundBounds, true)
 				.AddDialogTitleBar(Lang.Get(DIALOG_NAME), () => TryClose())
 				.BeginChildElements(backgroundBounds)
