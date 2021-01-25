@@ -87,8 +87,7 @@ namespace BuildingOverhaul
 				var resolved   = match.Ingredients[i];
 				var remaining  = ingredient.Quantity;
 				foreach (var slot in allSlots) {
-					if ((slot?.Itemstack == null) ||
-					    !resolved.Any(stack => slot.Itemstack.Satisfies(stack))) continue;
+					if (!resolved.Any(stack => stack.Satisfies(slot?.Itemstack))) continue;
 					var count = Math.Min(slot.Itemstack.StackSize, remaining);
 					takeIngredients += () => {
 						slot.Itemstack.StackSize -= count;
