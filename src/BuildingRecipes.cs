@@ -91,10 +91,13 @@ namespace BuildingOverhaul
 				foreach (var slot in allSlots) {
 					if (!resolved.Any(stack => stack.Satisfies(slot?.Itemstack))) continue;
 					var count = Math.Min(slot.Itemstack.StackSize, remaining);
-					applyBuildingCost += () => {
-						slot.TakeOut(count);
-						slot.MarkDirty();
-					};
+
+					if (!ingredient.IsTool)
+						applyBuildingCost += () => { slot.TakeOut(count); slot.MarkDirty(); };
+					else if (match.Recipe.ToolDurabilityCost > 0)
+						applyBuildingCost += () => slot.Itemstack.Item.DamageItem(
+							player.Entity.World, player.Entity, slot, match.Recipe.ToolDurabilityCost);
+
 					remaining -= count;
 					if (remaining <= 0) break;
 				}

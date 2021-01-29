@@ -42,8 +42,9 @@ namespace BuildingOverhaul
 		public AssetLocation Code { get; set; }
 		public string[] AllowedVariants { get; set; } = null;
 
-		// Name, Quantity and Attributes are not relevant for equality.
+		// Name, IsTool, Quantity and Attributes are not relevant for equality.
 		public string Name { get; set; } = null;
+		public bool IsTool { get; set; } = false;
 		public int Quantity { get; set; } = 1;
 		[JsonConverter(typeof(TreeAttributesConverter))]
 		public ITreeAttribute Attributes { get; set; } = null;
