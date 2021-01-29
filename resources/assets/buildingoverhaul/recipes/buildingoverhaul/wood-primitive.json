@@ -1,4 +1,7 @@
 [{
+  "enabled": false,
+  "__comment": "Disabled because the cost is quite high in comparison to Vanilla.",
+
   "shape": "fence",
   "tool": "game:axe-*",
   "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
@@ -8,6 +11,8 @@
   ],
   "output": "game:roughhewnfence-{wood}-ew-free"
 },{
+  "enabled": false,
+
   "shape": "fencegate",
   "tool": "game:axe-*",
   "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
