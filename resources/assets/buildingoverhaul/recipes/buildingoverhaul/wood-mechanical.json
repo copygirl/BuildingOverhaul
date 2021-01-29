@@ -1,0 +1,109 @@
+[{
+  "shape": "axle",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
+  "ingredients": [
+    { "code": "game:chisel-*", "isTool": true },
+    { "type": "block", "code": "game:log-placed-{wood}-ud" },
+    { "code": "game:fat" }
+  ],
+  "output": "game:woodenaxle-ud"
+},{
+  "shape": "angledgears",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
+  "ingredients": [
+    { "code": "game:saw-*", "isTool": true },
+    { "code": "game:chisel-*", "isTool": true },
+    { "type": "block", "code": "game:log-placed-{wood}-ud" },
+    { "code": "game:stick", "quantity": 2 },
+    { "code": "game:resin" },
+    { "code": "game:fat" }
+  ],
+  "output": "game:angledgears-s"
+},{
+  "shape": "brake",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
+  "ingredients": [
+    { "code": "game:chisel-*", "isTool": true },
+    { "type": "block", "code": "game:log-placed-{wood}-ud", "quantity": 2 },
+    { "code": "game:resin", "quantity": 2 },
+    { "code": "game:fat", "quantity": 2 }
+  ],
+  "output": "game:brake-north"
+},{
+  "shape": "clutch",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
+  "ingredients": [
+    { "code": "game:saw-*", "isTool": true },
+    { "code": "game:chisel-*", "isTool": true },
+    { "type": "block", "code": "game:log-placed-{wood}-ud" },
+    { "code": "game:plank-{wood}", "quantity": 8 },
+    { "code": "game:stick", "quantity": 8 },
+    { "code": "game:resin", "quantity": 2 },
+    { "code": "game:fat", "quantity": 2 }
+  ],
+  "output": "game:clutch-north"
+},{
+  "shape": "transmission",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
+  "ingredients": [
+    { "code": "game:saw-*", "isTool": true },
+    { "code": "game:chisel-*", "isTool": true },
+    { "type": "block", "code": "game:log-placed-{wood}-ud" },
+    { "code": "game:plank-{wood}", "quantity": 8 },
+    { "code": "game:stick" },
+    { "code": "game:resin", "quantity": 3 },
+    { "code": "game:fat", "quantity": 2 }
+  ],
+  "output": "game:transmission-ns"
+},{
+  "shape": "largegear",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
+  "ingredients": [
+    { "code": "game:saw-*", "isTool": true },
+    { "code": "game:chisel-*", "isTool": true },
+    { "type": "block", "code": "game:log-placed-{wood}-ud", "quantity": 4 },
+    { "code": "game:plank-{wood}", "quantity": 20 },
+    { "code": "game:stick", "quantity": 48 },
+    { "code": "game:resin", "quantity": 8 },
+    { "code": "game:fat", "quantity": 4 }
+  ],
+  "output": "game:largegear3"
+},{
+  "shape": "helvehammerbase",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
+  "ingredients": [
+    { "code": "game:chisel-*", "isTool": true },
+    { "type": "block", "code": "game:log-placed-{wood}-ud" },
+    { "code": "game:resin" }
+  ],
+  "output": "game:helvehammerbase-north"
+},{
+  "shape": "toggle",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
+  "ingredients": [
+    { "code": "game:chisel-*", "isTool": true },
+    { "type": "block", "code": "game:log-placed-{wood}-ud", "quantity": 2 },
+    { "code": "game:resin", "quantity": 4 },
+    { "code": "game:fat", "quantity": 2 }
+  ],
+  "output": "game:woodentoggle-ns"
+},{
+  "shape": "windmillrotor",
+  "tool": "game:hammer-*",
+  "material": { "type": "block", "code": "game:log-placed-*-ud", "name": "wood" },
+  "ingredients": [
+    { "code": "game:chisel-*", "isTool": true },
+    { "type": "block", "code": "game:log-placed-{wood}-ud", "quantity": 2 },
+    { "code": "game:resin" },
+    { "code": "game:fat" }
+  ],
+  "output": "game:windmillrotor-north"
+}]
