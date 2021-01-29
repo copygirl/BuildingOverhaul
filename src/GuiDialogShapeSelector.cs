@@ -48,8 +48,7 @@ namespace BuildingOverhaul
 		{
 			Recipes = recipes;
 
-			var columns = Math.Min(SLOTS_PER_ROW, 1);
-			var rows    = (1 + (SLOTS_PER_ROW - 1)) / SLOTS_PER_ROW;
+			var rows = (1 + (SLOTS_PER_ROW - 1)) / SLOTS_PER_ROW;
 			var innerWidth = SLOTS_PER_ROW * SLOT_SIZE;
 
 			_recipesBounds     = ElementBounds.Fixed(0, 30, innerWidth, rows * SLOT_SIZE);
@@ -66,7 +65,7 @@ namespace BuildingOverhaul
 				.AddDialogTitleBar(Lang.Get(DIALOG_NAME), () => TryClose())
 				.BeginChildElements(backgroundBounds)
 					// Recipe grid shows the available recipes for this tool and material stack.
-					.AddSkillItemGrid(RecipeItems, columns, rows, OnSlotClick, _recipesBounds, "recipegrid")
+					.AddSkillItemGrid(RecipeItems, SLOTS_PER_ROW, rows, OnSlotClick, _recipesBounds, "recipegrid")
 					// Name text shows the human-readable (and translated) name of the selected recipe's output.
 					.AddDynamicText("", CairoFont.WhiteSmallishText(), EnumTextOrientation.Left, _nameBounds, "name")
 					// Static "Building Cost:" text.
@@ -129,12 +128,11 @@ namespace BuildingOverhaul
 
 		private void RecalculateBounds()
 		{
-			var columns = Math.Min(SLOTS_PER_ROW, MatchedRecipes.Count);
-			var rows    = (MatchedRecipes.Count + (SLOTS_PER_ROW - 1)) / SLOTS_PER_ROW;
+			var rows = (MatchedRecipes.Count + (SLOTS_PER_ROW - 1)) / SLOTS_PER_ROW;
 
 			_recipesBounds.fixedY      = 30;
-			_recipesBounds.fixedWidth  = columns * SLOT_SIZE;
-			_recipesBounds.fixedHeight = rows    * SLOT_SIZE;
+			_recipesBounds.fixedWidth  = SLOTS_PER_ROW * SLOT_SIZE;
+			_recipesBounds.fixedHeight = rows          * SLOT_SIZE;
 
 			_nameBounds       .fixedY = 30 + rows * SLOT_SIZE + NAME_OFFSET;
 			_ingredientBounds .fixedY = 30 + rows * SLOT_SIZE + INGREDIENT_OFFSET;
@@ -152,6 +150,14 @@ namespace BuildingOverhaul
 			SingleComposer.GetDynamicText("name").SetNewText((index >= 0) ? RecipeItems[index].Name : "");
 			SingleComposer.GetRichtext("ingredients").RecomposeText();
 			if (index >= 0) CurrentShape = MatchedRecipes[index].Recipe.Shape;
+		}
+
+		public override void OnMouseWheel(MouseWheelEventArgs args)
+		{
+			if (!SingleComposer.Bounds.PointInside(capi.Input.MouseX, capi.Input.MouseY)) return;
+			var count = RecipeItems.Count;
+			OnSlotClick((Math.Max(0, RecipeGrid.selectedIndex) + count - args.delta) % count);
+			args.SetHandled(true);
 		}
 	}
 
