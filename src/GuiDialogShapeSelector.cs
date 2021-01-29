@@ -7,6 +7,7 @@ using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
+using Vintagestory.Client.NoObf;
 
 namespace BuildingOverhaul
 {
@@ -205,6 +206,12 @@ namespace BuildingOverhaul
 				api.Render.RenderItemstackToGui(_slot,
 					rx + _size * 0.5F, ry + _size * 0.5F, 100.0F,
 					(float)_size * 0.58F, ColorUtil.WhiteArgb);
+
+				// Something from RenderRectangle causes stacks to be rendered all "ghostly" which
+				// we want to make use of - it looks cool. But this state may be leaked to the next
+				// rendered stack, even if it's not a missing ingredient, so we need to clear it.
+				if (Dialog.MissingIngredients[i] > 0)
+					ShaderPrograms.Gui.NoTexture = 0;
 
 				double dx = api.Input.MouseX - rx;
 				double dy = api.Input.MouseY - ry;
