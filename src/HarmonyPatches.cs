@@ -18,10 +18,10 @@ namespace BuildingOverhaul
 			var beginOnInWorldInteraction = generator.DefineLabel();
 
 			// Yield instructions until the first call to the EntityControls.Sneak getter.
-			var SneakGetter = typeof(EntityControls).GetProperty(nameof(EntityControls.Sneak)).GetMethod;
+			var GetSneak = typeof(EntityControls).GetProperty(nameof(EntityControls.Sneak)).GetMethod;
 			while (enumerator.MoveNext()) {
 				yield return enumerator.Current;
-				if (enumerator.Current.Is(OpCodes.Callvirt, SneakGetter)) break;
+				if (enumerator.Current.Is(OpCodes.Callvirt, GetSneak)) break;
 			}
 
 			// Next instruction is "brtrue.s".
