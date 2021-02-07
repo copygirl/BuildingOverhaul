@@ -12,24 +12,24 @@ namespace BuildingOverhaul
 	public class Recipe
 	{
 		[JsonIgnore]
-		public AssetLocation Location { get; set; }
+		public AssetLocation Location { get; set; } = null!;
 
 		public bool Enabled { get; set; } = true;
-		public string Shape { get; set; }
+		public string Shape { get; set; } = null!;
 
 
 		[JsonConverter(typeof(IngredientConverter), EnumItemClass.Item, true, new []{ "quantity" })]
-		public Ingredient Tool { get; set; }
+		public Ingredient Tool { get; set; } = null!;
 
 		[JsonConverter(typeof(IngredientConverter), EnumItemClass.Item, true, new []{ "quantity" })]
-		public Ingredient Material { get; set; }
+		public Ingredient Material { get; set; } = null!;
 
 		[JsonProperty(ItemConverterType = typeof(IngredientConverter),
 		              ItemConverterParameters = new object[]{ EnumItemClass.Item, true, new []{ "name" } })]
-		public Ingredient[] Ingredients { get; set; }
+		public Ingredient[] Ingredients { get; set; } = null!;
 
 		[JsonConverter(typeof(IngredientConverter), EnumItemClass.Block, false, new []{ "type", "allowedVariants", "name", "quantity" })]
-		public Ingredient Output { get; set; }
+		public Ingredient Output { get; set; } = null!;
 
 
 		public int ToolDurabilityCost { get; set; } = 1;
@@ -39,25 +39,25 @@ namespace BuildingOverhaul
 	public class Ingredient : IEquatable<Ingredient>
 	{
 		public EnumItemClass Type { get; set; }
-		public AssetLocation Code { get; set; }
-		public string[] AllowedVariants { get; set; } = null;
+		public AssetLocation Code { get; set; } = null!;
+		public string[]? AllowedVariants { get; set; } = null;
 
 		// Name, IsTool, Quantity and Attributes are not relevant for equality.
-		public string Name { get; set; } = null;
+		public string? Name { get; set; } = null;
 		public bool IsTool { get; set; } = false;
 		public int Quantity { get; set; } = 1;
 		[JsonConverter(typeof(TreeAttributesConverter))]
-		public ITreeAttribute Attributes { get; set; } = null;
+		public ITreeAttribute? Attributes { get; set; } = null;
 
-		internal bool Matches(CollectibleObject collectible)
+		internal bool Matches(CollectibleObject? collectible)
 			=> (Type == collectible?.ItemClass) &&
 			   WildcardUtil.Match(Code, collectible.Code, AllowedVariants);
 
-		internal bool Matches(ItemStack stack)
+		internal bool Matches(ItemStack? stack)
 			=> Matches(stack?.Collectible) &&
-			   (Attributes?.IsSubSetOf(BuildingOverhaulSystem.API.World, stack.Attributes) ?? true);
+			   (Attributes?.IsSubSetOf(BuildingOverhaulSystem.API.World, stack!.Attributes) ?? true);
 
-		public bool Equals(Ingredient other)
+		public bool Equals(Ingredient? other)
 		{
 			return (other != null) && (Type == other.Type) && Code.Equals(other.Code) &&
 			       ((AllowedVariants == other.AllowedVariants) ||
@@ -65,7 +65,7 @@ namespace BuildingOverhaul
 			         AllowedVariants.SequenceEqual(other.AllowedVariants)));
 		}
 
-		public override bool Equals(object obj)
+		public override bool Equals(object? obj)
 			=> Equals(obj as Ingredient);
 
 		public override int GetHashCode()
@@ -79,9 +79,9 @@ namespace BuildingOverhaul
 			return hashCode;
 		}
 
-		public static bool operator ==(Ingredient left, Ingredient right)
+		public static bool operator ==(Ingredient? left, Ingredient? right)
 			=> left?.Equals(right) ?? object.ReferenceEquals(left, right);
-		public static bool operator !=(Ingredient left, Ingredient right)
+		public static bool operator !=(Ingredient? left, Ingredient? right)
 			=> !(left == right);
 	}
 
@@ -100,7 +100,7 @@ namespace BuildingOverhaul
 		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
 		{
 			var token = JToken.ReadFrom(reader);
-			Ingredient ingredient = null;
+			Ingredient ingredient;
 			switch (token.Type) {
 				case JTokenType.String:
 					ingredient = new Ingredient { Type = DefaultType, Code = new AssetLocation((string)token) };

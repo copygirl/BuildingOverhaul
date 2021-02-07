@@ -8,8 +8,11 @@ using Vintagestory.Client.NoObf;
 namespace BuildingOverhaul
 {
 	[HarmonyPatch(typeof(SystemMouseInWorldInteractions), "HandleMouseInteractionsBlockSelected")]
-	class SystemMouseInWorldInteractions_HandleMouseInteractionsBlockSelected_Patch
+	static class SystemMouseInWorldInteractions_HandleMouseInteractionsBlockSelected_Patch
 	{
+		public static System.Func<bool> InWorldInteract = null!;
+		public static bool OnInWorldInteract() => InWorldInteract();
+
 		static IEnumerable<CodeInstruction> Transpiler(
 			IEnumerable<CodeInstruction> instructions,
 			ILGenerator generator)
@@ -49,12 +52,9 @@ namespace BuildingOverhaul
 			enumerator.MoveNext();
 			yield return enumerator.Current;
 
-			// Insert call to BuildingOverhaulSystem.Instance.OnInWorldInteract.
-			// If OnInWorldInteract returns true, return from the method immediately.
-			var GetInstance       = typeof(BuildingOverhaulSystem).GetProperty(nameof(BuildingOverhaulSystem.Instance)).GetMethod;
-			var OnInWorldInteract = typeof(BuildingOverhaulSystem).GetMethod(nameof(BuildingOverhaulSystem.OnInWorldInteract));
-			yield return new(OpCodes.Call, GetInstance){ labels = new(){ beginOnInWorldInteraction } };
-			yield return new(OpCodes.Callvirt, OnInWorldInteract);
+			// Insert call to OnInWorldInteract. If it returns true, return from the method immediately.
+			var _OnInWorldInteract = typeof(SystemMouseInWorldInteractions_HandleMouseInteractionsBlockSelected_Patch).GetMethod(nameof(OnInWorldInteract));
+			yield return new(OpCodes.Call, _OnInWorldInteract){ labels = new(){ beginOnInWorldInteraction } };
 			yield return new(OpCodes.Brfalse_S, afterOnInWorldInteraction);
 			yield return new(OpCodes.Ret);
 

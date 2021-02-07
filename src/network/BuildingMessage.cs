@@ -2,7 +2,7 @@ using ProtoBuf;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 
-namespace BuildingOverhaul
+namespace BuildingOverhaul.Network
 {
 	[ProtoContract(ImplicitFields = ImplicitFields.AllFields)]
 	public class BuildingMessage
@@ -21,7 +21,10 @@ namespace BuildingOverhaul
 			DidOffset   = _didOffset,
 		};
 
+		// This is used by ProtoBuf, so ignore non-nullable warnings.
+		#pragma warning disable CS8618
 		private BuildingMessage() {  }
+		#pragma warning restore
 
 		public BuildingMessage(BlockSelection selection, string shape)
 		{

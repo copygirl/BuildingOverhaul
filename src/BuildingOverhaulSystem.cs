@@ -1,3 +1,5 @@
+using BuildingOverhaul.Client;
+using BuildingOverhaul.Network;
 using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -24,71 +26,55 @@ namespace BuildingOverhaul
 		public const string FAILURE_NO_MATERIALS = MOD_ID + ":nomaterials";
 
 
-		// == Common properties ==
-
 		/// <summary> Statically available instance of the API for resolving purposes. </summary>
-		public static ICoreAPI API { get; private set; }
+		public static ICoreAPI API { get; private set; } = null!;
 
 		/// <summary> List of recipes grouped by which tools they share, such as "game:hammer-*". </summary>
 		public BuildingRecipes Recipes { get; } = new();
 
-		// == Client properties ==
-
-		/// <summary> Statically available instance of the system, used by
-		///           Harmony patch to call <see cref="OnInWorldInteract"/>. </summary>
-		public static BuildingOverhaulSystem Instance { get; private set; }
-
-		public ICoreClientAPI ClientAPI { get; private set; }
-		public IClientNetworkChannel ClientChannel { get; private set; }
-		public GuiDialogShapeSelector Dialog { get; private set; }
 		public Harmony Harmony { get; } = new(MOD_ID);
 
-		// == Server properties ==
-
-		public ICoreServerAPI ServerAPI { get; private set; }
-		public IServerNetworkChannel ServerChannel { get; private set; }
 
 		public override void StartClientSide(ICoreClientAPI api)
 		{
-			Instance = this;
-			API = ClientAPI = api;
+			API = api;
+			Harmony.PatchAll();
 
-			ClientChannel = api.Network.RegisterChannel(MOD_ID)
+			var channel = api.Network.RegisterChannel(MOD_ID)
 				.RegisterMessageType<BuildingMessage>()
 				.RegisterMessageType<BuildingRecipes.Message>()
 				.SetMessageHandler<BuildingRecipes.Message>(Recipes.LoadFromMessage);
 
-			Dialog = new GuiDialogShapeSelector(api, Recipes);
-			api.Gui.RegisterDialog(Dialog);
+			var selection = new RecipeSelectionHandler(api, Recipes);
+			var dialog    = new GuiDialogShapeSelector(api, Recipes, selection);
+
+			SystemMouseInWorldInteractions_HandleMouseInteractionsBlockSelected_Patch.InWorldInteract = ()
+				=> OnInWorldInteract(api, channel, selection.CurrentShape);
 
 			// We're using the IsPlayerReady event because it appears
 			// hotkeys are registered after StartClientSide is called?
 			api.Event.IsPlayerReady += (ref EnumHandling handling)
-				=> { HookToolModeSelectHotkey(); return true; };
-
-			Harmony.PatchAll();
+				=> { HookToolModeSelectHotkey(api, dialog); return true; };
 		}
 
 		public override void StartServerSide(ICoreServerAPI api)
 		{
-			API = ServerAPI = api;
+			API = api;
 
-			ServerChannel = api.Network.RegisterChannel(MOD_ID)
+			var channel = api.Network.RegisterChannel(MOD_ID)
 				.RegisterMessageType<BuildingMessage>()
 				.RegisterMessageType<BuildingRecipes.Message>()
 				.SetMessageHandler<BuildingMessage>(OnBuildingMessage);
 
-			api.Event.SaveGameLoaded += () => Recipes.LoadFromAssets(ServerAPI.Assets, Mod.Logger);
-			api.Event.PlayerJoin += player => ServerChannel.SendPacket(Recipes.CachedMessage, player);
+			api.Event.SaveGameLoaded += () => Recipes.LoadFromAssets(api.Assets, Mod.Logger);
+			api.Event.PlayerJoin += player => channel.SendPacket(Recipes.CachedMessage, player);
 		}
 
 		public override void Dispose()
 		{
-			API = null;
-			if (ClientAPI != null) {
-				Instance = null;
+			if (API is ICoreClientAPI)
 				Harmony.UnpatchAll(MOD_ID);
-			}
+			API = null!;
 		}
 
 
@@ -96,13 +82,13 @@ namespace BuildingOverhaul
 		/// Hooks into the tool mode selection hotkey and instead shows the selection
 		/// dialog if a recipe is found for the held items, or closes if already opened.
 		/// </summary>
-		private void HookToolModeSelectHotkey()
+		private void HookToolModeSelectHotkey(ICoreClientAPI api, GuiDialog dialog)
 		{
-			var hotkey = ClientAPI.Input.HotKeys["toolmodeselect"];
+			var hotkey = api.Input.HotKeys["toolmodeselect"];
 			var originalHandler = hotkey.Handler;
-			hotkey.Handler = (keyCombination) => !Dialog.IsOpened()
-				? Dialog.TryOpen() || originalHandler(keyCombination)
-				: Dialog.TryClose();
+			hotkey.Handler = (keyCombination) => !dialog.IsOpened()
+				? dialog.TryOpen() || originalHandler(keyCombination)
+				: dialog.TryClose();
 		}
 
 
@@ -111,20 +97,21 @@ namespace BuildingOverhaul
 		/// is useless for most usecases. Attempts to find a recipe and place its
 		/// output. If successful, sends a message to the server to do the same.
 		/// </summary>
-		public bool OnInWorldInteract()
+		public bool OnInWorldInteract(ICoreClientAPI api,
+			IClientNetworkChannel channel, string currentShape)
 		{
-			var player    = ClientAPI.World.Player;
+			var player    = api.World.Player;
 			var selection = player.CurrentBlockSelection.Clone();
 
-			var result = TryBuild(player, selection, Dialog.CurrentShape, true);
+			var result = TryBuild(player, selection, currentShape, true);
 			if (result.IsSuccess) {
-				ClientChannel.SendPacket(new BuildingMessage(selection, Dialog.CurrentShape));
-				TriggerNeighbourBlocksUpdate(ClientAPI.World, selection.Position);
+				channel.SendPacket(new BuildingMessage(selection, currentShape));
+				TriggerNeighbourBlocksUpdate(api.World, selection.Position);
 			} else {
 				// Ignore missing recipe failures, this just means we aren't holding the right items.
 				if ((result.FailureCode == FAILURE_NO_RECIPE)) return false;
 				// But otherwise do show an error message.
-				ClientAPI.TriggerIngameError(this, result.FailureCode,
+				api.TriggerIngameError(this, result.FailureCode,
 					Lang.Get(result.FailureCode, result.LangParams));
 			}
 
@@ -180,7 +167,7 @@ namespace BuildingOverhaul
 			var match = matches.Find(match => match.Recipe.Shape == shape);
 			if (match == null) return new(FAILURE_NO_SHAPE, shape, hotbarItem.GetName());
 
-			System.Action applyBuildingCost = null;
+			System.Action? applyBuildingCost = null;
 			if (player.WorldData.CurrentGameMode != EnumGameMode.Creative) {
 				// If not in creative mode, test to see if the required materials are available.
 				applyBuildingCost = Recipes.FindIngredients(player, match);

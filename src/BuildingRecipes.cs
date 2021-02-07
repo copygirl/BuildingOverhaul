@@ -13,14 +13,14 @@ namespace BuildingOverhaul
 {
 	public class BuildingRecipes
 	{
-		private List<List<Recipe>> _byTool;
-		private Dictionary<Ingredient, List<CollectibleObject>> _ingredientLookup;
+		private List<List<Recipe>> _byTool = null!;
+		private Dictionary<Ingredient, List<CollectibleObject>> _ingredientLookup = null!;
 
 		/// <summary> Created once in <see cref="LoadFromAssets"/> to be sent to players when they join the server. </summary>
-		public Message CachedMessage { get; private set; }
+		public Message CachedMessage { get; private set; } = null!;
 
 		[ProtoContract(ImplicitFields = ImplicitFields.AllFields)]
-		public class Message { internal byte[] _data; }
+		public class Message { internal byte[] _data = null!; }
 
 
 		/// <summary> Finds all recipes matching the specified tool and material. </summary>
@@ -60,7 +60,7 @@ namespace BuildingOverhaul
 				var block = resolver.GetBlock(outputLoc);
 				if (block == null) continue;
 
-				var attributes = (TreeAttribute)recipe.Output.Attributes ?? new TreeAttribute();
+				var attributes = (TreeAttribute?)recipe.Output.Attributes ?? new TreeAttribute();
 				var output     = new ItemStack(block.Id, EnumItemClass.Block, 1, attributes, resolver);
 				matches.Add(new RecipeMatch(recipe, ingredients, output));
 				skip: {  }
@@ -75,14 +75,14 @@ namespace BuildingOverhaul
 		/// If they are not found, returns <c>null</c>.
 		/// </summary>
 		/// <param name="missing"> List which is filled to map ingredient to missing amount (by index). </param>
-		public System.Action FindIngredients(IPlayer player, RecipeMatch match, List<int> missing = null)
+		public System.Action? FindIngredients(IPlayer player, RecipeMatch match, List<int>? missing = null)
 		{
 			var inventory = player.InventoryManager;
 			var backpack  = inventory.GetOwnInventory(GlobalConstants.backpackInvClassName);
 			var hotbar    = inventory.GetOwnInventory(GlobalConstants.hotBarInvClassName);
 			var allSlots  = backpack.Concat(hotbar);
 
-			System.Action applyBuildingCost = null;
+			System.Action? applyBuildingCost = null;
 			missing?.Clear(); var anyMissing = false;
 			for (var i = 0; i < match.Recipe.Ingredients.Length; i++) {
 				var ingredient = match.Recipe.Ingredients[i];
@@ -268,14 +268,14 @@ namespace BuildingOverhaul
 			WriteAttributes(writer, value.Attributes);
 		}
 
-		private static ITreeAttribute ReadAttributes(BinaryReader reader)
+		private static ITreeAttribute? ReadAttributes(BinaryReader reader)
 		{
 			var count = reader.ReadInt32();
 			if (count == 0) return null;
 			var bytes = reader.ReadBytes(count);
 			return TreeAttribute.CreateFromBytes(bytes);
 		}
-		private static void WriteAttributes(BinaryWriter writer, ITreeAttribute value)
+		private static void WriteAttributes(BinaryWriter writer, ITreeAttribute? value)
 		{
 			if (value != null) {
 				var bytes = ((TreeAttribute)value).ToBytes();
