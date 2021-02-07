@@ -47,6 +47,7 @@ namespace BuildingOverhaul
 
 			var selection = new RecipeSelectionHandler(api, Recipes);
 			var dialog    = new GuiDialogShapeSelector(api, Recipes, selection);
+			var preview   = new PreviewRenderer(api, selection);
 
 			SystemMouseInWorldInteractions_HandleMouseInteractionsBlockSelected_Patch.InWorldInteract = ()
 				=> OnInWorldInteract(api, channel, selection.CurrentShape);
